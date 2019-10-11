@@ -1,0 +1,104 @@
+trigger:
+  branches:
+    include: ['develop']
+  tags:
+    include: ['*']
+
+jobs:
+  - job: generate_matrix
+    displayName: Generate Matrix
+    steps:
+      - bash: |
+          python src/romp/_matrix.py
+        name: generate_matrix
+
+  - job: dist
+    displayName: Build Wheel and sdist
+    pool:
+      vmImage: 'ubuntu-16.04'
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: 3.7
+          architecture: x64
+      - bash: |
+          python -m pip install wheel
+          python setup.py sdist
+          python setup.py bdist_wheel
+        displayName: Build Wheel
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: '$(System.DefaultWorkingDirectory)/dist/'
+          artifactName: dist
+
+  - job: test
+    displayName: Test
+    dependsOn:
+      - generate_matrix
+      - dist
+    pool:
+      vmImage: $[ variables.vmImage ]
+    strategy:
+      maxParallel: 4
+      matrix: $[ dependencies.generate_matrix.outputs['generate_matrix.JobsToRun'] ]
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(versionSpec)
+          architecture: $(architecture)
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          artifactName: 'dist'
+          downloadPath: $(System.DefaultWorkingDirectory)
+      - bash: |
+          python -c 'import sys; print(sys.version); print(sys.platform)'
+        displayName: Report Python version
+      - bash: |
+          python -m pip install tox pytest-azurepipelines
+        displayName: Install tox
+      - bash: |
+          echo "##vso[task.setvariable variable=CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS]1"
+          echo "##vso[task.setvariable variable=LDFLAGS]/usr/local/opt/openssl\\@1.1/lib/libcrypto.a /usr/local/opt/openssl\\@1.1/lib/libssl.a"
+          echo "##vso[task.setvariable variable=CFLAGS]-I/usr/local/opt/openssl\\@1.1/include -Werror -Wno-error=deprecated-declarations -Wno-error=incompatible-pointer-types-discards-qualifiers -Wno-error=unused-function -Wno-error=unused-command-line-argument -mmacosx-version-min=10.9"
+        displayName: Set OpenSSL build variables - macOS PyPy
+        condition: and(eq( variables['Agent.OS'], 'Darwin' ), startsWith(variables.versionSpec, 'pypy'))
+      - bash: |
+          python -m tox -e ${TOXENV} --installpkg dist/*.whl
+        displayName: tox
+        env:
+          ROMP_PERSONAL_ACCESS_TOKEN: $(ROMP_PERSONAL_ACCESS_TOKEN)
+          ROMP_BUILD_REQUEST_URL: https://dev.azure.com/altendky/romp-on/_apis/build/builds?api-version=5.0
+          ROMP_USERNAME: $(ROMP_USERNAME)
+          ROMP_DEFINITION_ID: 5
+          ROMP_SOURCE_BRANCH: $(Build.SourceBranch)
+          TOXENV: $[ variables.TOXENV ]
+      - bash: |
+          python -m tox -e codecov
+        displayName: codecov
+        env:
+          CODECOV_TOKEN: $(CODECOV_TOKEN)
+
+  - job: publish
+    displayName: Publish
+    dependsOn: test
+    pool:
+      vmImage: 'ubuntu-16.04'
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: 3.7
+          architecture: x64
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          artifactName: 'dist'
+          downloadPath: $(System.DefaultWorkingDirectory)
+      - bash: |
+          python -m venv venv
+          venv/bin/pip install twine
+        displayName: Build venv
+      - bash: |
+          venv/bin/python twineontag.py
+        env:
+          TWINE_USERNAME: $(TWINE_USERNAME)
+          TWINE_PASSWORD: $(TWINE_PASSWORD)
+        displayName: Twine On Tag
