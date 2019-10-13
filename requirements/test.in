@@ -1,0 +1,7 @@
+--requirement base.in
+
+coverage
+mypy
+pytest
+pytest-cov
+tox

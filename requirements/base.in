@@ -1,0 +1,10 @@
+--requirement pre.in
+
+attrs
+click
+importlib_resources
+-e git+https://github.com/altendky/marshmallow@0009a064339d6f4db753833c8c9d25e1c903e712#egg=marshmallow
+pyrsistent
+
+# but this is an azure extra... :[
+pyyaml

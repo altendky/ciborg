@@ -17,10 +17,33 @@ def load_template():
     return template
 
 
+def create_pipeline(name):
+    return Pipeline(name=name)
+
+
+def dump_pipeline(pipeline):
+    basic_types = PipelineSchema().dump(pipeline)
+    dumped = yaml.dump(basic_types)
+
+    return dumped
+
+
+class IncludeExcludePVectorsSchema(marshmallow.Schema):
+    include = marshmallow.fields.List(marshmallow.fields.String())
+    exclude = marshmallow.fields.List(marshmallow.fields.String())
+
+
 @attr.s(frozen=True)
 class IncludeExcludePVectors:
     include = attr.ib(factory=pvector)
     exclude = attr.ib(factory=pvector)
+
+
+class TriggerSchema(marshmallow.Schema):
+    batch = marshmallow.fields.Boolean()
+    branches = marshmallow.fields.Nested(IncludeExcludePVectorsSchema())
+    tags = marshmallow.fields.Nested(IncludeExcludePVectorsSchema())
+    paths = marshmallow.fields.Nested(IncludeExcludePVectorsSchema())
 
 
 @attr.s(frozen=True)
@@ -31,6 +54,17 @@ class Trigger:
     paths = attr.ib(factory=IncludeExcludePVectors)
 
 
+class BashStepSchema(marshmallow.Schema):
+    id_name = marshmallow.fields.String(data_key='bash')
+    display_name = marshmallow.fields.String()
+    script = marshmallow.fields.List(marshmallow.fields.String())
+    fail_on_stderr = marshmallow.fields.Boolean(data_key='failOnStderr')
+    environment = marshmallow.fields.Dict(
+        keys=marshmallow.fields.String(),
+        values=marshmallow.fields.String(),
+    )
+
+
 @attr.s(frozen=True)
 class BashStep:
     id_name: str
@@ -38,6 +72,19 @@ class BashStep:
     script = attr.ib(default=(), converter=pvector)
     fail_on_stderr: bool = attr.ib(default=True)
     environment = attr.ib(factory=pmap)
+
+
+class JobSchema(marshmallow.Schema):
+    name = marshmallow.fields.String(data_key='job')
+    display_name = marshmallow.fields.String(data_key='displayName')
+    depends_on = marshmallow.fields.List(
+        marshmallow.fields.Pluck('JobSchema', 'name'),
+    )
+    condition = marshmallow.fields.String()
+    continue_on_error = marshmallow.fields.Boolean()
+    steps = marshmallow.fields.List(
+        marshmallow.fields.Nested(BashStepSchema()),
+    )
 
 
 @attr.s(frozen=True)
@@ -50,6 +97,17 @@ class Job:
     steps = attr.ib(factory=pvector)
 
 
+class StageSchema(marshmallow.Schema):
+    id_name = marshmallow.fields.String(data_key='stage')
+    display_name = marshmallow.fields.String(data_key='displayName')
+    depends_on = marshmallow.fields.List(
+        marshmallow.fields.String(),
+        data_key='dependsOn',
+    )
+    condition = marshmallow.fields.String()
+    jobs = marshmallow.fields.List(marshmallow.fields.Nested(JobSchema()))
+
+
 @attr.s(frozen=True)
 class Stage:
     id_name = attr.ib()
@@ -60,8 +118,9 @@ class Stage:
 
 
 class PipelineSchema(marshmallow.Schema):
-    name = marshmallow.fields.Str()
-    trigger = marshmallow.fields.Nested(StageSchema())
+    name = marshmallow.fields.String()
+    trigger = marshmallow.fields.Nested(TriggerSchema())
+    stages = marshmallow.fields.List(marshmallow.fields.Nested(StageSchema()))
 
 
 @attr.s(frozen=True)
@@ -71,7 +130,6 @@ class Pipeline:
     stages = attr.ib(factory=list)
 
 
-print(Pipeline(name='ciborg'))
 # @attr.s(frozen=True)
 # class IncludeExcludeStringTuples:
 #     include = attr.ib(factory=tuple, type=typing.Tuple[str])
