@@ -130,7 +130,7 @@ class TaskStepSchema(marshmallow.Schema):
 
     task = marshmallow.fields.String()
     id_name = marshmallow.fields.String(data_key='name')
-    display_name = marshmallow.fields.String(data_key='display_name')
+    display_name = marshmallow.fields.String(data_key='displayName')
     inputs = marshmallow.fields.Dict(
         keys=marshmallow.fields.String(),
         values=marshmallow.fields.String(),
@@ -153,7 +153,7 @@ class BashStepSchema(marshmallow.Schema):
     class Meta:
         ordered = True
 
-    display_name = marshmallow.fields.String()
+    display_name = marshmallow.fields.String(data_key='displayName')
     script = marshmallow.fields.List(
         marshmallow.fields.String(),
         data_key='bash',
