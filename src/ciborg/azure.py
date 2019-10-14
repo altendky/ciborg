@@ -75,7 +75,7 @@ def dump_pipeline(pipeline):
     return dumped
 
 
-def remove_skip_values(the_dict, skip_values=pset({None, ''})):
+def remove_skip_values(the_dict, skip_values=pset({None, pvector(), pmap()})):
     return {
         key: value
         for key, value in the_dict.items()
@@ -84,7 +84,7 @@ def remove_skip_values(the_dict, skip_values=pset({None, ''})):
 
 
 @marshmallow.decorators.post_dump
-def post_dump_remove_none_values(self, data, many):
+def post_dump_remove_skip_values(self, data, many):
     return remove_skip_values(data)
 
 
@@ -92,7 +92,7 @@ class IncludeExcludePVectorsSchema(marshmallow.Schema):
     include = marshmallow.fields.List(marshmallow.fields.String())
     exclude = marshmallow.fields.List(marshmallow.fields.String())
 
-    post_dump = post_dump_remove_none_values
+    post_dump = post_dump_remove_skip_values
 
 
 @attr.s(frozen=True)
@@ -107,7 +107,7 @@ class TriggerSchema(marshmallow.Schema):
     tags = marshmallow.fields.Nested(IncludeExcludePVectorsSchema())
     paths = marshmallow.fields.Nested(IncludeExcludePVectorsSchema())
 
-    post_dump = post_dump_remove_none_values
+    post_dump = post_dump_remove_skip_values
 
 
 @attr.s(frozen=True)
@@ -128,7 +128,7 @@ class TaskStepSchema(marshmallow.Schema):
     )
     condition = marshmallow.fields.String(allow_none=True)
 
-    post_dump = post_dump_remove_none_values
+    post_dump = post_dump_remove_skip_values
 
 
 @attr.s(frozen=True)
@@ -152,7 +152,7 @@ class BashStepSchema(marshmallow.Schema):
         values=marshmallow.fields.String(),
     )
 
-    post_dump = post_dump_remove_none_values
+    post_dump = post_dump_remove_skip_values
 
 
 @attr.s(frozen=True)
@@ -175,7 +175,7 @@ class JobSchema(marshmallow.Schema):
         marshmallow.fields.Nested(BashStepSchema()),
     )
 
-    post_dump = post_dump_remove_none_values
+    post_dump = post_dump_remove_skip_values
 
 
 @attr.s(frozen=True)
@@ -198,7 +198,7 @@ class StageSchema(marshmallow.Schema):
     condition = marshmallow.fields.String(allow_none=True)
     jobs = marshmallow.fields.List(marshmallow.fields.Nested(JobSchema()))
 
-    post_dump = post_dump_remove_none_values
+    post_dump = post_dump_remove_skip_values
 
 
 @attr.s(frozen=True)
@@ -215,7 +215,7 @@ class PipelineSchema(marshmallow.Schema):
     trigger = marshmallow.fields.Nested(TriggerSchema())
     stages = marshmallow.fields.List(marshmallow.fields.Nested(StageSchema()))
 
-    post_dump = post_dump_remove_none_values
+    post_dump = post_dump_remove_skip_values
 
 
 @attr.s(frozen=True)
