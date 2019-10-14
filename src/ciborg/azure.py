@@ -57,8 +57,43 @@ def create_sdist_job():
     return sdist_job
 
 
-def create_bdist_pure_job():
-    pass
+def create_bdist_wheel_pure_job():
+    use_python_version_step = TaskStep(
+        task='UsePythonVersion@0',
+        inputs={
+            'versionSpec': '3.7',
+            'architecture': 'x64',
+        },
+    )
+
+    bash_step = BashStep(
+        display_name='Build',
+        script='\n'.join([
+            'python setup.py bdist_wheel',
+        ]),
+    )
+
+    publish_task_step = TaskStep(
+        task='PublishBuildArtifacts@1',
+        display_name='Publish',
+        id_name='publish',
+        inputs={
+            'pathToPublish': '$(System.DefaultWorkingDirectory)/dist/',
+            'artifactName': 'dist',
+        },
+    )
+
+    job = Job(
+        name='bdist_wheel',
+        display_name='Build sdist',
+        steps=[
+            use_python_version_step,
+            bash_step,
+            publish_task_step,
+        ],
+    )
+
+    return job
 
 
 def create_pipeline(name):
@@ -67,6 +102,7 @@ def create_pipeline(name):
         display_name='Main',
         jobs=pvector([
             create_sdist_job(),
+            create_bdist_wheel_pure_job(),
         ]),
     )
 
