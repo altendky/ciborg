@@ -1,11 +1,9 @@
 name: Testing Pipeline
 stages:
-- condition: null
-  dependsOn: []
+- dependsOn: []
   displayName: Main
   jobs:
-  - condition: null
-    continue_on_error: true
+  - continue_on_error: true
     depends_on: []
     displayName: Build sdist
     job: sdist
