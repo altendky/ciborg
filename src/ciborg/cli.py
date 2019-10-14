@@ -17,4 +17,5 @@ def fiddle():
 
     pipeline = ciborg.azure.create_pipeline(name='Testing Pipeline')
     dumped_pipeline = ciborg.azure.dump_pipeline(pipeline=pipeline)
-    print(dumped_pipeline)
+    with open('azure-pipelines.yml', 'w') as f:
+        f.write(dumped_pipeline)

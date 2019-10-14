@@ -19,6 +19,14 @@ def load_template():
 
 
 def create_sdist_job():
+    use_python_version_step = TaskStep(
+        task='UsePythonVersion@0',
+        inputs={
+            'versionSpec': '3.7',
+            'architecture': 'x64',
+        },
+    )
+
     bash_step = BashStep(
         display_name='Build',
         script='\n'.join([
@@ -40,6 +48,7 @@ def create_sdist_job():
         name='sdist',
         display_name='Build sdist',
         steps=[
+            use_python_version_step,
             bash_step,
             publish_task_step,
         ],
@@ -144,9 +153,9 @@ class TaskStepSchema(marshmallow.Schema):
 @attr.s(frozen=True)
 class TaskStep:
     task = attr.ib()
-    id_name = attr.ib()
-    display_name = attr.ib()
     inputs = attr.ib(converter=pmap)
+    id_name = attr.ib(default=None)
+    display_name = attr.ib(default=None)
     condition = attr.ib(default=None)
 
 
