@@ -153,11 +153,11 @@ class BashStepSchema(marshmallow.Schema):
     class Meta:
         ordered = True
 
-    display_name = marshmallow.fields.String(data_key='displayName')
     script = marshmallow.fields.List(
         marshmallow.fields.String(),
         data_key='bash',
     )
+    display_name = marshmallow.fields.String(data_key='displayName')
     fail_on_stderr = marshmallow.fields.Boolean(data_key='failOnStderr')
     environment = marshmallow.fields.Dict(
         keys=marshmallow.fields.String(),
@@ -169,8 +169,8 @@ class BashStepSchema(marshmallow.Schema):
 
 @attr.s(frozen=True)
 class BashStep:
+    script = attr.ib(converter=pvector)
     display_name: str = attr.ib()
-    script = attr.ib(default=(), converter=pvector)
     fail_on_stderr: bool = attr.ib(default=True)
     environment = attr.ib(default=pmap(), converter=pmap)
 
