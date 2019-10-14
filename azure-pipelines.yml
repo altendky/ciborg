@@ -7,7 +7,7 @@ stages:
   jobs:
   - job: sdist
     displayName: Build sdist
-    continue_on_error: true
+    continueOnError: true
     steps:
     - display_name: Build
       bash:

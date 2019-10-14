@@ -185,7 +185,7 @@ class JobSchema(marshmallow.Schema):
         marshmallow.fields.Pluck('JobSchema', 'name'),
     )
     condition = marshmallow.fields.String(allow_none=True)
-    continue_on_error = marshmallow.fields.Boolean()
+    continue_on_error = marshmallow.fields.Boolean(data_key='continueOnError')
     steps = marshmallow.fields.List(
         marshmallow.fields.Nested(BashStepSchema()),
     )
