@@ -18,6 +18,7 @@ extras_require_test = [
 setuptools.setup(
     name='ciborg',
     author='Kyle Altendorf',
+    author_email='sda@fstab.net',
     description='Generate CI configuration for various services',
     long_description=readme,
     long_description_content_type='text/x-rst',
