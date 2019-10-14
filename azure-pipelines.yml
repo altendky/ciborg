@@ -12,4 +12,9 @@ stages:
     - bash: python setup.py sdist --format=zip
       displayName: Build
       failOnStderr: true
-    - displayName: Publish
+    - task: PublishBuildArtifacts@1
+      name: publish
+      displayName: Publish
+      inputs:
+        pathToPublish: $(System.DefaultWorkingDirectory)/dist/
+        artifactName: dist

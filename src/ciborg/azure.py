@@ -45,8 +45,6 @@ def create_sdist_job():
         ],
     )
 
-    print(sdist_job.steps[1])
-
     return sdist_job
 
 
