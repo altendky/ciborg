@@ -58,6 +58,7 @@ setuptools.setup(
     extras_require={
         'azure': [
             'pyyaml',
+            'marshmallow_polyfield',
         ],
         'dev': [
             'gitignoreio',

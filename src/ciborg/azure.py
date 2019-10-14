@@ -1,3 +1,4 @@
+import collections
 import typing
 
 import attr
@@ -18,13 +19,32 @@ def load_template():
     return template
 
 
-def create_sdist_job():
-    use_python_version_step = TaskStep(
+def create_use_python_version_task_step(version_spec, architecture):
+    return TaskStep(
         task='UsePythonVersion@0',
-        inputs={
-            'versionSpec': '3.7',
-            'architecture': 'x64',
-        },
+        inputs=UsePythonVersionTaskStep(
+            version_spec=version_spec,
+            architecture=architecture,
+        ),
+    )
+
+
+def create_publish_build_artifacts_task_step(path_to_publish, artifact_name):
+    return TaskStep(
+        task='PublishBuildArtifacts@1',
+        display_name='Publish',
+        id_name='publish',
+        inputs=PublishBuildArtifactsTaskStep(
+            path_to_publish=path_to_publish,
+            artifact_name=artifact_name,
+        ),
+    )
+
+
+def create_sdist_job():
+    use_python_version_step = create_use_python_version_task_step(
+        version_spec='3.7',
+        architecture='x64',
     )
 
     bash_step = BashStep(
@@ -34,14 +54,9 @@ def create_sdist_job():
         ]),
     )
 
-    publish_task_step = TaskStep(
-        task='PublishBuildArtifacts@1',
-        display_name='Publish',
-        id_name='publish',
-        inputs={
-            'pathToPublish': '$(System.DefaultWorkingDirectory)/dist/',
-            'artifactName': 'dist',
-        },
+    publish_task_step = create_publish_build_artifacts_task_step(
+        path_to_publish='$(System.DefaultWorkingDirectory)/dist/',
+        artifact_name='dist',
     )
 
     sdist_job = Job(
@@ -58,12 +73,9 @@ def create_sdist_job():
 
 
 def create_bdist_wheel_pure_job():
-    use_python_version_step = TaskStep(
-        task='UsePythonVersion@0',
-        inputs={
-            'versionSpec': '3.7',
-            'architecture': 'x64',
-        },
+    use_python_version_step = create_use_python_version_task_step(
+        version_spec='3.7',
+        architecture='x64',
     )
 
     bash_step = BashStep(
@@ -73,19 +85,14 @@ def create_bdist_wheel_pure_job():
         ]),
     )
 
-    publish_task_step = TaskStep(
-        task='PublishBuildArtifacts@1',
-        display_name='Publish',
-        id_name='publish',
-        inputs={
-            'pathToPublish': '$(System.DefaultWorkingDirectory)/dist/',
-            'artifactName': 'dist',
-        },
+    publish_task_step = create_publish_build_artifacts_task_step(
+        path_to_publish='$(System.DefaultWorkingDirectory)/dist/',
+        artifact_name='dist',
     )
 
     job = Job(
         name='bdist_wheel',
-        display_name='Build sdist',
+        display_name='Build pure wheel',
         steps=[
             use_python_version_step,
             bash_step,
@@ -114,19 +121,32 @@ def create_pipeline(name):
     return pipeline
 
 
+class TidyOrderedDictDumper(yaml.Dumper):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.add_representer(
+            collections.OrderedDict,
+            lambda dumper, data: dumper.represent_mapping(
+                'tag:yaml.org,2002:map',
+                data.items(),
+            )
+        )
+
+
 def dump_pipeline(pipeline):
     basic_types = PipelineSchema().dump(pipeline)
-    dumped = yaml.dump(basic_types, sort_keys=False)
+    dumped = yaml.dump(basic_types, sort_keys=False, Dumper=TidyOrderedDictDumper)
 
     return dumped
 
 
 def remove_skip_values(the_dict, skip_values=pset({None, pvector(), pmap()})):
-    return {
-        key: value
+    return type(the_dict)([
+        [key, value]
         for key, value in the_dict.items()
         if value not in tuple(skip_values)
-    }
+    ])
 
 
 @marshmallow.decorators.post_dump
@@ -164,10 +184,53 @@ class TriggerSchema(marshmallow.Schema):
 
 @attr.s(frozen=True)
 class Trigger:
-    batch: bool = attr.ib(default=False)
+    batch = attr.ib(default=False)
     branches = attr.ib(factory=IncludeExcludePVectors)
     tags = attr.ib(factory=IncludeExcludePVectors)
     paths = attr.ib(factory=IncludeExcludePVectors)
+
+
+class OrderedDictField(marshmallow.fields.Mapping):
+    # https://github.com/marshmallow-code/marshmallow/pull/1098
+    mapping_type = collections.OrderedDict
+
+
+class UsePythonVersionTaskStepSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
+    architecture = marshmallow.fields.String()
+    version_spec = marshmallow.fields.String(data_key='versionSpec')
+
+
+@attr.s(frozen=True)
+class UsePythonVersionTaskStep:
+    architecture = attr.ib()
+    version_spec = attr.ib()
+
+
+class PublishBuildArtifactsTaskStepSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
+    path_to_publish = marshmallow.fields.String(data_key='pathToPublish')
+    artifact_name = marshmallow.fields.String(data_key='artifactName')
+
+
+@attr.s(frozen=True)
+class PublishBuildArtifactsTaskStep:
+    path_to_publish = attr.ib()
+    artifact_name = attr.ib()
+
+
+task_step_inputs_type_schema_map = pmap({
+    UsePythonVersionTaskStep: UsePythonVersionTaskStepSchema,
+    PublishBuildArtifactsTaskStep: PublishBuildArtifactsTaskStepSchema,
+})
+
+
+def task_step_inputs_serialization_schema_selector(base_object, parent_object):
+    return task_step_inputs_type_schema_map[type(base_object)]()
 
 
 class TaskStepSchema(marshmallow.Schema):
@@ -177,9 +240,10 @@ class TaskStepSchema(marshmallow.Schema):
     task = marshmallow.fields.String()
     id_name = marshmallow.fields.String(data_key='name')
     display_name = marshmallow.fields.String(data_key='displayName')
-    inputs = marshmallow.fields.Dict(
-        keys=marshmallow.fields.String(),
-        values=marshmallow.fields.String(),
+    inputs = marshmallow_polyfield.PolyField(
+        serialization_schema_selector=(
+            task_step_inputs_serialization_schema_selector
+        ),
     )
     condition = marshmallow.fields.String(allow_none=True)
 
@@ -189,7 +253,7 @@ class TaskStepSchema(marshmallow.Schema):
 @attr.s(frozen=True)
 class TaskStep:
     task = attr.ib()
-    inputs = attr.ib(converter=pmap)
+    inputs = attr.ib()
     id_name = attr.ib(default=None)
     display_name = attr.ib(default=None)
     condition = attr.ib(default=None)
@@ -213,8 +277,8 @@ class BashStepSchema(marshmallow.Schema):
 @attr.s(frozen=True)
 class BashStep:
     script = attr.ib()
-    display_name: str = attr.ib()
-    fail_on_stderr: bool = attr.ib(default=True)
+    display_name = attr.ib()
+    fail_on_stderr = attr.ib(default=True)
     environment = attr.ib(default=pmap(), converter=pmap)
 
 

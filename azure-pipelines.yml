@@ -11,8 +11,8 @@ stages:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.7'
         architecture: x64
+        versionSpec: '3.7'
     - bash: python setup.py sdist --format=zip
       displayName: Build
       failOnStderr: true
@@ -23,13 +23,13 @@ stages:
         pathToPublish: $(System.DefaultWorkingDirectory)/dist/
         artifactName: dist
   - job: bdist_wheel
-    displayName: Build sdist
+    displayName: Build pure wheel
     continueOnError: true
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.7'
         architecture: x64
+        versionSpec: '3.7'
     - bash: python setup.py bdist_wheel
       displayName: Build
       failOnStderr: true
