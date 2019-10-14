@@ -1,41 +1,43 @@
-name: Testing Pipeline
-trigger:
-  batch: false
-stages:
-- stage: main
-  displayName: Main
-  jobs:
-  - job: sdist
-    displayName: Build sdist
-    continueOnError: true
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        architecture: x64
-        versionSpec: '3.7'
-    - bash: python setup.py sdist --format=zip
-      displayName: Build
-      failOnStderr: true
-    - task: PublishBuildArtifacts@1
-      name: publish
-      displayName: Publish
-      inputs:
-        pathToPublish: $(System.DefaultWorkingDirectory)/dist/
-        artifactName: dist
-  - job: bdist_wheel
-    displayName: Build pure wheel
-    continueOnError: true
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        architecture: x64
-        versionSpec: '3.7'
-    - bash: python setup.py bdist_wheel
-      displayName: Build
-      failOnStderr: true
-    - task: PublishBuildArtifacts@1
-      name: publish
-      displayName: Publish
-      inputs:
-        pathToPublish: $(System.DefaultWorkingDirectory)/dist/
-        artifactName: dist
+'name': 'Testing Pipeline'
+'trigger':
+  'batch': false
+'stages':
+- 'stage': 'main'
+  'displayName': 'Main'
+  'jobs':
+  - 'job': 'sdist'
+    'displayName': 'Build sdist'
+    'continueOnError': true
+    'steps':
+    - 'task': 'UsePythonVersion@0'
+      'inputs':
+        'architecture': 'x64'
+        'versionSpec': '3.7'
+    - 'bash': 'python setup.py sdist --format=zip'
+      'displayName': 'Build'
+      'failOnStderr': true
+    - 'task': 'PublishBuildArtifacts@1'
+      'name': 'publish'
+      'displayName': 'Publish'
+      'inputs':
+        'pathToPublish': '$(System.DefaultWorkingDirectory)/dist/'
+        'artifactName': 'dist'
+  - 'job': 'bdist_wheel'
+    'displayName': 'Build pure wheel'
+    'continueOnError': true
+    'steps':
+    - 'task': 'UsePythonVersion@0'
+      'inputs':
+        'architecture': 'x64'
+        'versionSpec': '3.7'
+    - 'bash': |-
+        python -m pip install wheel
+        python setup.py bdist_wheel
+      'displayName': 'Build'
+      'failOnStderr': true
+    - 'task': 'PublishBuildArtifacts@1'
+      'name': 'publish'
+      'displayName': 'Publish'
+      'inputs':
+        'pathToPublish': '$(System.DefaultWorkingDirectory)/dist/'
+        'artifactName': 'dist'

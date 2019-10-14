@@ -81,6 +81,7 @@ def create_bdist_wheel_pure_job():
     bash_step = BashStep(
         display_name='Build',
         script='\n'.join([
+            'python -m pip install wheel',
             'python setup.py bdist_wheel',
         ]),
     )
@@ -121,16 +122,29 @@ def create_pipeline(name):
     return pipeline
 
 
+def ordered_dict_representer(dumper, data):
+    return dumper.represent_mapping('tag:yaml.org,2002:map', data.items())
+
+
+def str_representer(dumper, data):
+    if '\n' in data:
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style="'")
+
+
 class TidyOrderedDictDumper(yaml.Dumper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.add_representer(
             collections.OrderedDict,
-            lambda dumper, data: dumper.represent_mapping(
-                'tag:yaml.org,2002:map',
-                data.items(),
-            )
+            ordered_dict_representer,
+        )
+
+        self.add_representer(
+            str,
+            str_representer,
         )
 
 
