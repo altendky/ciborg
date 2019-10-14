@@ -15,6 +15,6 @@ def fiddle():
     # import json
     # print(json.dumps(template, indent=4))
 
-    pipeline = ciborg.azure.create_pipeline(name='testing pipeline')
+    pipeline = ciborg.azure.create_pipeline(name='Testing Pipeline')
     dumped_pipeline = ciborg.azure.dump_pipeline(pipeline=pipeline)
     print(dumped_pipeline)

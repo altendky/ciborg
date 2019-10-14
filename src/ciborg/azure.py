@@ -5,7 +5,7 @@ import importlib_resources
 import marshmallow
 import yaml
 
-from pyrsistent import pvector, pmap
+from pyrsistent import pvector, pmap, pset
 
 import ciborg.data
 
@@ -17,8 +17,55 @@ def load_template():
     return template
 
 
+def create_sdist_job():
+    bash_step = BashStep(
+        display_name='Build',
+        script=[
+            'python setup.py sdist --format=zip',
+        ],
+    )
+
+    publish_task_step = TaskStep(
+        task='PublishBuildArtifacts@1',
+        display_name='Publish',
+        id_name='publish',
+        inputs={
+            'pathToPublish': '$(System.DefaultWorkingDirectory)/dist/',
+            'artifactName': 'dist',
+        },
+    )
+
+    sdist_job = Job(
+        name='sdist',
+        display_name='Build sdist',
+        steps=[
+            bash_step,
+            publish_task_step,
+        ],
+    )
+
+    return sdist_job
+
+
+def create_bdist_pure_job():
+    pass
+
+
 def create_pipeline(name):
-    return Pipeline(name=name)
+    stage = Stage(
+        id_name='main',
+        display_name='Main',
+        jobs=pvector([
+            create_sdist_job(),
+        ]),
+    )
+
+    pipeline = Pipeline(
+        name=name,
+        stages=pvector([stage]),
+    )
+
+    return pipeline
 
 
 def dump_pipeline(pipeline):
@@ -54,10 +101,32 @@ class Trigger:
     paths = attr.ib(factory=IncludeExcludePVectors)
 
 
+class TaskStepSchema(marshmallow.Schema):
+    task = marshmallow.fields.String()
+    id_name = marshmallow.fields.String(data_key='name')
+    display_name = marshmallow.fields.String(data_key='display_name')
+    inputs = marshmallow.fields.Dict(
+        keys=marshmallow.fields.String(),
+        values=marshmallow.fields.String(),
+    )
+    condition = marshmallow.fields.String(allow_none=True)
+
+
+@attr.s(frozen=True)
+class TaskStep:
+    task = attr.ib()
+    id_name = attr.ib()
+    display_name = attr.ib()
+    inputs = attr.ib(converter=pmap)
+    condition = attr.ib(default=None)
+
+
 class BashStepSchema(marshmallow.Schema):
-    id_name = marshmallow.fields.String(data_key='bash')
     display_name = marshmallow.fields.String()
-    script = marshmallow.fields.List(marshmallow.fields.String())
+    script = marshmallow.fields.List(
+        marshmallow.fields.String(),
+        data_key='bash',
+    )
     fail_on_stderr = marshmallow.fields.Boolean(data_key='failOnStderr')
     environment = marshmallow.fields.Dict(
         keys=marshmallow.fields.String(),
@@ -67,11 +136,10 @@ class BashStepSchema(marshmallow.Schema):
 
 @attr.s(frozen=True)
 class BashStep:
-    id_name: str
-    display_name: str
+    display_name: str = attr.ib()
     script = attr.ib(default=(), converter=pvector)
     fail_on_stderr: bool = attr.ib(default=True)
-    environment = attr.ib(factory=pmap)
+    environment = attr.ib(default=pmap(), converter=pmap)
 
 
 class JobSchema(marshmallow.Schema):
@@ -80,7 +148,7 @@ class JobSchema(marshmallow.Schema):
     depends_on = marshmallow.fields.List(
         marshmallow.fields.Pluck('JobSchema', 'name'),
     )
-    condition = marshmallow.fields.String()
+    condition = marshmallow.fields.String(allow_none=True)
     continue_on_error = marshmallow.fields.Boolean()
     steps = marshmallow.fields.List(
         marshmallow.fields.Nested(BashStepSchema()),
@@ -92,9 +160,19 @@ class Job:
     name = attr.ib()
     display_name = attr.ib()
     depends_on = attr.ib(factory=pvector)
-    condition = attr.ib(default='')
+    condition = attr.ib(default=None)
     continue_on_error = attr.ib(default=True)
-    steps = attr.ib(factory=pvector)
+    steps = attr.ib(default=(), converter=pvector)
+
+
+# def remove_skip_values(the_dict, skip_values=pset({None, ''})):
+#     if not isinstance(the_dict, dict):
+#         print()
+#     return {
+#         key: value
+#         for key, value in the_dict.items()
+#         if value not in tuple(skip_values)
+#     }
 
 
 class StageSchema(marshmallow.Schema):
@@ -104,8 +182,15 @@ class StageSchema(marshmallow.Schema):
         marshmallow.fields.String(),
         data_key='dependsOn',
     )
-    condition = marshmallow.fields.String()
+    condition = marshmallow.fields.String(allow_none=True)
     jobs = marshmallow.fields.List(marshmallow.fields.Nested(JobSchema()))
+
+    # @marshmallow.decorators.post_dump
+    # def post_dump(self, data, many):
+    #     # if many:
+    #     #     return tuple(remove_skip_values(item) for item in data)
+    #
+    #     return remove_skip_values(data)
 
 
 @attr.s(frozen=True)
@@ -113,7 +198,7 @@ class Stage:
     id_name = attr.ib()
     display_name = attr.ib()
     depends_on = attr.ib(factory=pvector)
-    condition = attr.ib(default='')
+    condition = attr.ib(default=None)
     jobs = attr.ib(factory=pvector)
 
 

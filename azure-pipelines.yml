@@ -1,0 +1,30 @@
+name: Testing Pipeline
+stages:
+- condition: null
+  dependsOn: []
+  displayName: Main
+  jobs:
+  - condition: null
+    continue_on_error: true
+    depends_on: []
+    displayName: Build sdist
+    job: sdist
+    steps:
+    - bash:
+      - python setup.py sdist --format=zip
+      display_name: Build
+      environment: {}
+      failOnStderr: true
+    - display_name: Publish
+  stage: main
+trigger:
+  batch: false
+  branches:
+    exclude: []
+    include: []
+  paths:
+    exclude: []
+    include: []
+  tags:
+    exclude: []
+    include: []
