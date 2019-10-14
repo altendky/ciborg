@@ -3,6 +3,7 @@ import typing
 import attr
 import importlib_resources
 import marshmallow
+import marshmallow_polyfield
 import yaml
 
 from pyrsistent import pvector, pmap, pset
@@ -43,6 +44,8 @@ def create_sdist_job():
             publish_task_step,
         ],
     )
+
+    print(sdist_job.steps[1])
 
     return sdist_job
 
@@ -172,6 +175,16 @@ class BashStep:
     environment = attr.ib(default=pmap(), converter=pmap)
 
 
+step_type_schema_map = pmap({
+    BashStep: BashStepSchema,
+    TaskStep: TaskStepSchema,
+})
+
+
+def job_steps_serialization_schema_selector(base_object, parent_object):
+    return step_type_schema_map[type(base_object)]()
+
+
 class JobSchema(marshmallow.Schema):
     class Meta:
         ordered = True
@@ -184,7 +197,11 @@ class JobSchema(marshmallow.Schema):
     condition = marshmallow.fields.String(allow_none=True)
     continue_on_error = marshmallow.fields.Boolean(data_key='continueOnError')
     steps = marshmallow.fields.List(
-        marshmallow.fields.Nested(BashStepSchema()),
+        marshmallow_polyfield.PolyField(
+            serialization_schema_selector=(
+                job_steps_serialization_schema_selector
+            ),
+        ),
     )
 
     post_dump = post_dump_remove_skip_values

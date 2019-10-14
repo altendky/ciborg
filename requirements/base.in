@@ -8,3 +8,4 @@ pyrsistent
 
 # but this is an azure extra... :[
 pyyaml
+marshmallow-polyfield

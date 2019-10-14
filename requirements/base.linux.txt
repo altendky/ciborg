@@ -11,12 +11,13 @@ chardet==3.0.4            # via requests
 click==7.0
 idna==2.8                 # via requests
 importlib-resources==1.0.2
+marshmallow-polyfield==5.7
 pip-tools==4.2.0
 pyrsistent==0.15.4
 pyyaml==5.1.2
 requests==2.22.0          # via romp
 romp==2019.4.1
-six==1.12.0               # via pip-tools, pyrsistent
+six==1.12.0               # via marshmallow-polyfield, pip-tools, pyrsistent
 urllib3==1.25.6           # via requests
 wheel==0.33.6
 
