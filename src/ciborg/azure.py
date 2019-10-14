@@ -20,9 +20,9 @@ def load_template():
 def create_sdist_job():
     bash_step = BashStep(
         display_name='Build',
-        script=[
+        script='\n'.join([
             'python setup.py sdist --format=zip',
-        ],
+        ]),
     )
 
     publish_task_step = TaskStep(
@@ -153,10 +153,7 @@ class BashStepSchema(marshmallow.Schema):
     class Meta:
         ordered = True
 
-    script = marshmallow.fields.List(
-        marshmallow.fields.String(),
-        data_key='bash',
-    )
+    script = marshmallow.fields.String(data_key='bash')
     display_name = marshmallow.fields.String(data_key='displayName')
     fail_on_stderr = marshmallow.fields.Boolean(data_key='failOnStderr')
     environment = marshmallow.fields.Dict(
@@ -169,7 +166,7 @@ class BashStepSchema(marshmallow.Schema):
 
 @attr.s(frozen=True)
 class BashStep:
-    script = attr.ib(converter=pvector)
+    script = attr.ib()
     display_name: str = attr.ib()
     fail_on_stderr: bool = attr.ib(default=True)
     environment = attr.ib(default=pmap(), converter=pmap)

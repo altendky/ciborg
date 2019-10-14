@@ -9,8 +9,7 @@ stages:
     displayName: Build sdist
     continueOnError: true
     steps:
-    - bash:
-      - python setup.py sdist --format=zip
+    - bash: python setup.py sdist --format=zip
       displayName: Build
       failOnStderr: true
     - displayName: Publish
