@@ -70,7 +70,7 @@ def create_pipeline(name):
 
 def dump_pipeline(pipeline):
     basic_types = PipelineSchema().dump(pipeline)
-    dumped = yaml.dump(basic_types)
+    dumped = yaml.dump(basic_types, sort_keys=False)
 
     return dumped
 
@@ -89,6 +89,9 @@ def post_dump_remove_skip_values(self, data, many):
 
 
 class IncludeExcludePVectorsSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
     include = marshmallow.fields.List(marshmallow.fields.String())
     exclude = marshmallow.fields.List(marshmallow.fields.String())
 
@@ -102,6 +105,9 @@ class IncludeExcludePVectors:
 
 
 class TriggerSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
     batch = marshmallow.fields.Boolean()
     branches = marshmallow.fields.Nested(IncludeExcludePVectorsSchema())
     tags = marshmallow.fields.Nested(IncludeExcludePVectorsSchema())
@@ -119,6 +125,9 @@ class Trigger:
 
 
 class TaskStepSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
     task = marshmallow.fields.String()
     id_name = marshmallow.fields.String(data_key='name')
     display_name = marshmallow.fields.String(data_key='display_name')
@@ -141,6 +150,9 @@ class TaskStep:
 
 
 class BashStepSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
     display_name = marshmallow.fields.String()
     script = marshmallow.fields.List(
         marshmallow.fields.String(),
@@ -164,6 +176,9 @@ class BashStep:
 
 
 class JobSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
     name = marshmallow.fields.String(data_key='job')
     display_name = marshmallow.fields.String(data_key='displayName')
     depends_on = marshmallow.fields.List(
@@ -189,6 +204,9 @@ class Job:
 
 
 class StageSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
     id_name = marshmallow.fields.String(data_key='stage')
     display_name = marshmallow.fields.String(data_key='displayName')
     depends_on = marshmallow.fields.List(
@@ -211,6 +229,9 @@ class Stage:
 
 
 class PipelineSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
     name = marshmallow.fields.String()
     trigger = marshmallow.fields.Nested(TriggerSchema())
     stages = marshmallow.fields.List(marshmallow.fields.Nested(StageSchema()))

@@ -1,16 +1,16 @@
 name: Testing Pipeline
-stages:
-- displayName: Main
-  jobs:
-  - continue_on_error: true
-    displayName: Build sdist
-    job: sdist
-    steps:
-    - bash:
-      - python setup.py sdist --format=zip
-      display_name: Build
-      failOnStderr: true
-    - display_name: Publish
-  stage: main
 trigger:
   batch: false
+stages:
+- stage: main
+  displayName: Main
+  jobs:
+  - job: sdist
+    displayName: Build sdist
+    continue_on_error: true
+    steps:
+    - display_name: Build
+      bash:
+      - python setup.py sdist --format=zip
+      failOnStderr: true
+    - display_name: Publish
