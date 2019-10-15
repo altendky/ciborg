@@ -82,7 +82,7 @@ def create_bdist_wheel_pure_job(vm_image):
     bash_step = BashStep(
         display_name='Build',
         script='\n'.join([
-            'python -m pip install wheel',
+            'python -m pip install --upgrade pip setuptools wheel',
             'python setup.py bdist_wheel',
         ]),
     )
