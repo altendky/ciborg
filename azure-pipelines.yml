@@ -49,7 +49,7 @@
     'displayName': 'Tox - py37'
     'pool':
       'vmImage': 'ubuntu-16.04'
-    'depends_on':
+    'dependsOn':
     - 'bdist_wheel'
     'continueOnError': true
     'steps':

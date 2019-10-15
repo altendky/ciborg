@@ -520,6 +520,7 @@ class JobSchema(marshmallow.Schema):
             nested='JobSchema',
             field_name='id_name',
         ),
+        data_key='dependsOn',
     )
     condition = marshmallow.fields.String(allow_none=True)
     continue_on_error = marshmallow.fields.Boolean(data_key='continueOnError')
