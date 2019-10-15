@@ -472,6 +472,7 @@ class BashStepSchema(marshmallow.Schema):
     environment = marshmallow.fields.Dict(
         keys=marshmallow.fields.String(),
         values=marshmallow.fields.String(),
+        data_key='env',
     )
 
     post_dump = post_dump_remove_skip_values

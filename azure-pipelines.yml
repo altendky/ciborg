@@ -60,5 +60,5 @@
     - 'bash': 'python -m tox'
       'displayName': 'Tox'
       'failOnStderr': true
-      'environment':
+      'env':
         'TOX_ENV': 'py37'
