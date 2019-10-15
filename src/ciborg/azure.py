@@ -41,7 +41,7 @@ def create_publish_build_artifacts_task_step(path_to_publish, artifact_name):
     )
 
 
-def create_sdist_job():
+def create_sdist_job(vm_image):
     use_python_version_step = create_use_python_version_task_step(
         version_spec='3.7',
         architecture='x64',
@@ -60,19 +60,20 @@ def create_sdist_job():
     )
 
     sdist_job = Job(
-        name='sdist',
+        id_name='sdist',
         display_name='Build sdist',
         steps=[
             use_python_version_step,
             bash_step,
             publish_task_step,
         ],
+        pool=Pool(vm_image=vm_image),
     )
 
     return sdist_job
 
 
-def create_bdist_wheel_pure_job():
+def create_bdist_wheel_pure_job(vm_image):
     use_python_version_step = create_use_python_version_task_step(
         version_spec='3.7',
         architecture='x64',
@@ -92,26 +93,214 @@ def create_bdist_wheel_pure_job():
     )
 
     job = Job(
-        name='bdist_wheel',
+        id_name='bdist_wheel',
         display_name='Build pure wheel',
         steps=[
             use_python_version_step,
             bash_step,
             publish_task_step,
         ],
+        pool=Pool(vm_image=vm_image),
+    )
+
+    return job
+
+
+class PlatformSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
+    display_name = marshmallow.fields.String()
+
+
+@attr.s(frozen=True)
+class Platform:
+    display_name = attr.ib()
+
+
+platforms = {
+    'linux': Platform(display_name='Linux'),
+    'macos': Platform(display_name='macOS'),
+    'windows': Platform(display_name='Windows'),
+}
+
+
+class VmImageSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
+    id_name = marshmallow.fields.String()
+    display_name = marshmallow.fields.String()
+    platform = marshmallow.fields.Nested(PlatformSchema)
+
+
+@attr.s(frozen=True)
+class VmImage:
+    id_name = attr.ib()
+    display_name = attr.ib()
+    platform = attr.ib()
+
+
+vm_images = {
+    'linux': VmImage(
+        platform=platforms['linux'],
+        display_name=platforms['linux'].display_name,
+        id_name='ubuntu-16.04',
+    ),
+    'macos': VmImage(
+        platform=platforms['macos'],
+        display_name=platforms['macos'].display_name,
+        id_name='macOS-10.13',
+    ),
+    'windows': VmImage(
+        platform=platforms['windows'],
+        display_name=platforms['windows'].display_name,
+        id_name='vs2017-win2016',
+    ),
+}
+
+# @attr.s(frozen=True)
+# class Platform:
+#     display_name = attr.ib()
+#
+#
+# class Platforms(enum.Enum):
+#     linux = Platform(display_name='Linux')
+#     macos = Platform(display_name='macOS')
+#     windows = Platform(display_name='Windows')
+#
+#
+# @attr.s(frozen=True)
+# class VmImage:
+#     id_name = attr.ib()
+#     display_name = attr.ib()
+#     platform = attr.ib()
+#
+#
+# class VmImages(enum.Enum):
+#     linux = VmImage(
+#         platform=Platforms.linux,
+#         display_name=Platforms.linux.value.display_name,
+#         id_name='ubuntu-16.04',
+#     )
+#     macos = VmImage(
+#         platform=Platforms.macos,
+#         display_name=Platforms.macos.value.display_name,
+#         id_name='macOS-10.13',
+#     )
+#     windows = VmImage(
+#         platform=Platforms.windows,
+#         display_name=Platforms.windows.value.display_name,
+#         id_name='vs2017-win2016',
+#     )
+
+
+# vm_images_per_platform = pmap({
+#     Platforms.linux: [VmImages.linux],
+#     Platforms.macos: [VmImages.macos],
+#     Platforms.windows: [VmImages.windows],
+# })
+
+
+# default_vm_images_per_platform = pmap({
+#     linux: VmImages.linux,
+#     macos: VmImages.macos,
+#     windows: VmImages.windows,
+# })
+
+
+@attr.s(frozen=True)
+class Environment:
+    platform = attr.ib()
+    vm_image = attr.ib()
+    interpreter = attr.ib()
+    version = attr.ib()
+    architecture = attr.ib()
+
+    @classmethod
+    def build(cls, platform, interpreter, version, architecture):
+        return cls(
+            platform=platform,
+            vm_image=vm_images[platform],
+            interpreter=interpreter,
+            version=version,
+            architecture=architecture,
+        )
+
+    def tox_env(self):
+        env = 'py'
+        if self.interpreter == 'PyPy':
+            env += 'py'
+            if self.version[0] == '3':
+                env += '3'
+        else:
+            env += self.version.replace('.', '')
+
+        return env
+
+    def display_name(self):
+        # TODO: really implement this
+        return self.tox_env()
+
+    def matrix_version(self):
+        if self.interpreter == 'CPython':
+            return self.version
+
+        return 'pypy{}'.format(self.version[0])
+
+
+def create_tox_test_job(build_job, environment):
+    use_python_version_step = create_use_python_version_task_step(
+        version_spec='3.7',
+        architecture='x64',
+    )
+
+    bash_step = BashStep(
+        display_name='Tox',
+        script='\n'.join([
+            'python -m tox',
+        ]),
+        environment={'TOX_ENV': environment.tox_env()},
+    )
+
+    job = Job(
+        id_name='tox_{}'.format(environment.tox_env()),
+        display_name='Tox - {}'.format(environment.display_name()),
+        steps=[
+            use_python_version_step,
+            bash_step,
+        ],
+        depends_on=[build_job],
+        pool=Pool(vm_image=environment.vm_image),
     )
 
     return job
 
 
 def create_pipeline(name):
+    pure_wheel_job = create_bdist_wheel_pure_job(vm_image=vm_images['linux'])
+
+    vm_image = vm_images['linux']
+
+    test_job_environment = Environment(
+        platform=vm_image.platform,
+        vm_image=vm_image,
+        interpreter='CPython',
+        version='3.7',
+        architecture=None,
+    )
+
     stage = Stage(
         id_name='main',
         display_name='Main',
-        jobs=pvector([
-            create_sdist_job(),
-            create_bdist_wheel_pure_job(),
-        ]),
+        jobs=[
+            create_sdist_job(vm_image=vm_images['linux']),
+            pure_wheel_job,
+            create_tox_test_job(
+                build_job=pure_wheel_job,
+                environment=test_job_environment,
+            ),
+        ],
     )
 
     pipeline = Pipeline(
@@ -296,6 +485,19 @@ class BashStep:
     environment = attr.ib(default=pmap(), converter=pmap)
 
 
+class PoolSchema(marshmallow.Schema):
+    vm_image = marshmallow.fields.Pluck(
+        nested=VmImageSchema,
+        field_name='id_name',
+        data_key='vmImage',
+    )
+
+
+@attr.s(frozen=True)
+class Pool:
+    vm_image = attr.ib()
+
+
 step_type_schema_map = pmap({
     BashStep: BashStepSchema,
     TaskStep: TaskStepSchema,
@@ -310,10 +512,14 @@ class JobSchema(marshmallow.Schema):
     class Meta:
         ordered = True
 
-    name = marshmallow.fields.String(data_key='job')
+    id_name = marshmallow.fields.String(data_key='job')
     display_name = marshmallow.fields.String(data_key='displayName')
+    pool = marshmallow.fields.Nested(PoolSchema())
     depends_on = marshmallow.fields.List(
-        marshmallow.fields.Pluck('JobSchema', 'name'),
+        marshmallow.fields.Pluck(
+            nested='JobSchema',
+            field_name='id_name',
+        ),
     )
     condition = marshmallow.fields.String(allow_none=True)
     continue_on_error = marshmallow.fields.Boolean(data_key='continueOnError')
@@ -330,8 +536,9 @@ class JobSchema(marshmallow.Schema):
 
 @attr.s(frozen=True)
 class Job:
-    name = attr.ib()
+    id_name = attr.ib()
     display_name = attr.ib()
+    pool = attr.ib()
     depends_on = attr.ib(factory=pvector)
     condition = attr.ib(default=None)
     continue_on_error = attr.ib(default=True)
