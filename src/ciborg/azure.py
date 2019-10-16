@@ -258,6 +258,8 @@ def create_tox_test_job(build_job, environment):
     bash_step = BashStep(
         display_name='Tox',
         script='\n'.join([
+            'python -m pip install --quiet --upgrade pip setuptools wheel',
+            'python -m pip install tox',
             'python -m tox',
         ]),
         environment={'TOX_ENV': environment.tox_env()},
