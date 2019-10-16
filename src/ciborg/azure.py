@@ -251,7 +251,7 @@ class Environment:
 
 def create_tox_test_job(build_job, environment):
     use_python_version_step = create_use_python_version_task_step(
-        version_spec='3.7',
+        version_spec=environment.version,
         architecture='x64',
     )
 
@@ -262,7 +262,7 @@ def create_tox_test_job(build_job, environment):
             'python -m pip install tox',
             'python -m tox',
         ]),
-        environment={'TOX_ENV': environment.tox_env()},
+        environment={'TOXENV': environment.tox_env()},
     )
 
     job = Job(
