@@ -1,0 +1,19 @@
+{
+    "name": "ciborg",
+    "build_sdist": true,
+    "build_wheel": "universal",
+    "test_environments": [
+        {
+            "platform": "linux",
+            "interpreter": "cpython",
+            "version": "3.7",
+            "install_source": "sdist"
+        },
+        {
+            "platform": "linux",
+            "interpreter": "cpython",
+            "version": "3.6",
+            "install_source": "bdist"
+        }
+    ]
+}

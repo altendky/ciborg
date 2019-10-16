@@ -65,7 +65,5 @@ setuptools.setup(
         ] + extras_require_test,
         'test': extras_require_test,
     },
-    package_data={
-        'ciborg': ['py.typed'],
-    },
+    include_package_data=True,
 )

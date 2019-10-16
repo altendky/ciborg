@@ -277,34 +277,51 @@ def create_tox_test_job(build_job, environment):
     return job
 
 
-def create_pipeline(name):
-    pure_wheel_job = create_bdist_wheel_pure_job(vm_image=vm_images['linux'])
+def create_pipeline(configuration):
+    jobs = pvector()
 
-    vm_image = vm_images['linux']
+    if configuration.build_sdist:
+        sdist_job = create_sdist_job(vm_image=vm_images['linux'])
+        jobs = jobs.append(sdist_job)
 
-    test_job_environment = Environment(
-        platform=vm_image.platform,
-        vm_image=vm_image,
-        interpreter='CPython',
-        version='3.7',
-        architecture=None,
-    )
+    if configuration.build_wheel == 'universal':
+        bdist_job = create_bdist_wheel_pure_job(
+            vm_image=vm_images['linux'],
+        )
+        jobs = jobs.append(bdist_job)
+    # elif configuration.build_wheel == 'specific':
+
+    for environment in configuration.test_environments:
+        vm_image = vm_images[environment.platform]
+
+        test_job_environment = Environment(
+            platform=vm_image.platform,
+            vm_image=vm_image,
+            interpreter=environment.interpreter,
+            version=environment.version,
+            architecture=None,
+        )
+
+        build_job = {
+            'sdist': sdist_job,
+            'bdist': bdist_job,
+        }[environment.install_source]
+
+        jobs = jobs.append(
+            create_tox_test_job(
+                build_job=build_job,
+                environment=test_job_environment,
+            ),
+        )
 
     stage = Stage(
         id_name='main',
         display_name='Main',
-        jobs=[
-            create_sdist_job(vm_image=vm_images['linux']),
-            pure_wheel_job,
-            create_tox_test_job(
-                build_job=pure_wheel_job,
-                environment=test_job_environment,
-            ),
-        ],
+        jobs=jobs,
     )
 
     pipeline = Pipeline(
-        name=name,
+        name=configuration.name,
         stages=pvector([stage]),
     )
 

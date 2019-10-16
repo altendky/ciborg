@@ -1,2 +1,2 @@
 include versioneer.py
-include src/ciborg/_version.py
+graft src/
