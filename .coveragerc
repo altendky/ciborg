@@ -1,0 +1,7 @@
+[run]
+branch = True
+source =
+    ciborg
+
+[report]
+show_missing = True
