@@ -31,7 +31,7 @@ setuptools.setup(
     classifiers=[
         # complete classifier list:
         #   https://pypi.org/pypi?%3Aaction=list_classifiers
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
