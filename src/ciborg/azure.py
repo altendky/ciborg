@@ -43,7 +43,7 @@ def create_publish_build_artifacts_task_step(path_to_publish, artifact_name):
 
 def create_download_build_artifacts_task_step(download_path, artifact_name):
     return TaskStep(
-        task='DownloadBuildArtifacts@1',
+        task='DownloadBuildArtifacts@0',
         display_name='Download',
         id_name='download',
         inputs=DownloadBuildArtifactsTaskStep(
