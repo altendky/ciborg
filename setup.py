@@ -53,13 +53,11 @@ setuptools.setup(
         'click',
         'importlib_resources',
         'marshmallow',
+        'marshmallow_polyfield',
         'pyrsistent',
+        'pyyaml',
     ],
     extras_require={
-        'azure': [
-            'pyyaml',
-            'marshmallow_polyfield',
-        ],
         'dev': [
             'gitignoreio',
         ] + extras_require_test,
