@@ -41,6 +41,18 @@ def create_publish_build_artifacts_task_step(path_to_publish, artifact_name):
     )
 
 
+def create_download_build_artifacts_task_step(download_path, artifact_name):
+    return TaskStep(
+        task='DownloadBuildArtifacts@1',
+        display_name='Download',
+        id_name='download',
+        inputs=DownloadBuildArtifactsTaskStep(
+            download_path=download_path,
+            artifact_name=artifact_name,
+        ),
+    )
+
+
 def create_sdist_job(vm_image):
     use_python_version_step = create_use_python_version_task_step(
         version_spec='3.7',
@@ -252,10 +264,15 @@ class Environment:
         return 'pypy{}'.format(self.version[0])
 
 
-def create_tox_test_job(build_job, environment):
+def create_tox_test_job(build_job, environment, extension):
     use_python_version_step = create_use_python_version_task_step(
         version_spec=environment.version,
         architecture='x64',
+    )
+
+    download_task_step = create_download_build_artifacts_task_step(
+        download_path='$(System.DefaultWorkingDirectory)/dist/',
+        artifact_name='dist',
     )
 
     bash_step = BashStep(
@@ -263,7 +280,7 @@ def create_tox_test_job(build_job, environment):
         script='\n'.join([
             'python -m pip install --quiet --upgrade pip setuptools wheel',
             'python -m pip install tox',
-            'python -m tox',
+            'python -m tox --installpkg="dist/*{}"'.format(extension),
         ]),
         environment={'TOXENV': environment.tox_env()},
     )
@@ -277,6 +294,7 @@ def create_tox_test_job(build_job, environment):
         display_name='Tox - {}'.format(environment.display_name()),
         steps=[
             use_python_version_step,
+            download_task_step,
             bash_step,
         ],
         depends_on=[build_job],
@@ -316,10 +334,16 @@ def create_pipeline(configuration):
             'bdist': bdist_job,
         }[environment.install_source]
 
+        extension = {
+            'sdist': '.zip',
+            'bdist': '.whl',
+        }[environment.install_source]
+
         jobs = jobs.append(
             create_tox_test_job(
                 build_job=build_job,
                 environment=test_job_environment,
+                extension=extension,
             ),
         )
 
@@ -452,9 +476,24 @@ class PublishBuildArtifactsTaskStep:
     artifact_name = attr.ib()
 
 
+class DownloadBuildArtifactsTaskStepSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
+    download_path = marshmallow.fields.String(data_key='pathToPublish')
+    artifact_name = marshmallow.fields.String(data_key='artifactName')
+
+
+@attr.s(frozen=True)
+class DownloadBuildArtifactsTaskStep:
+    download_path = attr.ib()
+    artifact_name = attr.ib()
+
+
 task_step_inputs_type_schema_map = pmap({
     UsePythonVersionTaskStep: UsePythonVersionTaskStepSchema,
     PublishBuildArtifactsTaskStep: PublishBuildArtifactsTaskStepSchema,
+    DownloadBuildArtifactsTaskStep: DownloadBuildArtifactsTaskStepSchema,
 })
 
 
