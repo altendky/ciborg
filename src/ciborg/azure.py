@@ -93,7 +93,7 @@ def create_bdist_wheel_pure_job(vm_image):
     )
 
     job = Job(
-        id_name='bdist_wheel',
+        id_name='bdist',
         display_name='Build pure wheel',
         steps=[
             use_python_version_step,
@@ -117,7 +117,7 @@ class PlatformSchema(marshmallow.Schema):
 class Platform:
     display_name = attr.ib()
 
-    def casefold(self):
+    def identifier(self):
         return self.display_name.casefold()
 
 
@@ -269,9 +269,10 @@ def create_tox_test_job(build_job, environment):
     )
 
     job = Job(
-        id_name='tox_{platform}_{tox_env}'.format(
-            platform=environment.platform.casefold(),
+        id_name='tox_{platform}_{tox_env}_{dist_type}'.format(
+            platform=environment.platform.identifier(),
             tox_env=environment.tox_env(),
+            dist_type=build_job.id_name,
         ),
         display_name='Tox - {}'.format(environment.display_name()),
         steps=[
