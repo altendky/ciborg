@@ -45,7 +45,7 @@ stages:
       inputs:
         pathToPublish: $(System.DefaultWorkingDirectory)/dist/
         artifactName: dist
-  - job: tox_py36
+  - job: tox_linux_py36
     displayName: Tox - py36
     pool:
       vmImage: ubuntu-16.04
@@ -65,7 +65,7 @@ stages:
       failOnStderr: true
       env:
         TOXENV: py36
-  - job: tox_py38
+  - job: tox_linux_py38
     displayName: Tox - py38
     pool:
       vmImage: ubuntu-16.04
@@ -85,7 +85,7 @@ stages:
       failOnStderr: true
       env:
         TOXENV: py38
-  - job: tox_py38
+  - job: tox_linux_py38
     displayName: Tox - py38
     pool:
       vmImage: ubuntu-16.04
@@ -105,7 +105,7 @@ stages:
       failOnStderr: true
       env:
         TOXENV: py38
-  - job: tox_py38
+  - job: tox_macos_py38
     displayName: Tox - py38
     pool:
       vmImage: macOS-10.13
@@ -125,7 +125,7 @@ stages:
       failOnStderr: true
       env:
         TOXENV: py38
-  - job: tox_py38
+  - job: tox_windows_py38
     displayName: Tox - py38
     pool:
       vmImage: vs2017-win2016
