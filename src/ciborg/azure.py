@@ -117,6 +117,9 @@ class PlatformSchema(marshmallow.Schema):
 class Platform:
     display_name = attr.ib()
 
+    def casefold(self):
+        return self.display_name.casefold()
+
 
 platforms = {
     'linux': Platform(display_name='Linux'),
@@ -266,7 +269,10 @@ def create_tox_test_job(build_job, environment):
     )
 
     job = Job(
-        id_name='tox_{}'.format(environment.tox_env()),
+        id_name='tox_{platform}_{tox_env}'.format(
+            platform=environment.platform.casefold(),
+            tox_env=environment.tox_env(),
+        ),
         display_name='Tox - {}'.format(environment.display_name()),
         steps=[
             use_python_version_step,
