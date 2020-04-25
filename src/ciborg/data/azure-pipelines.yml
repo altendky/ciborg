@@ -24,7 +24,7 @@ stages:
       inputs:
         pathToPublish: $(System.DefaultWorkingDirectory)/dist/
         artifactName: dist
-  - job: bdist_wheel
+  - job: bdist
     displayName: Build pure wheel
     pool:
       vmImage: ubuntu-16.04
@@ -45,7 +45,7 @@ stages:
       inputs:
         pathToPublish: $(System.DefaultWorkingDirectory)/dist/
         artifactName: dist
-  - job: tox_linux_py37
+  - job: tox_linux_py37_sdist
     displayName: Tox - py37
     pool:
       vmImage: ubuntu-16.04
@@ -65,12 +65,12 @@ stages:
       failOnStderr: true
       env:
         TOXENV: py37
-  - job: tox_linux_py36
+  - job: tox_linux_py36_bdist
     displayName: Tox - py36
     pool:
       vmImage: ubuntu-16.04
     dependsOn:
-    - bdist_wheel
+    - bdist
     continueOnError: true
     steps:
     - task: UsePythonVersion@0
