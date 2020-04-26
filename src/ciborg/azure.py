@@ -74,7 +74,7 @@ def create_set_dist_file_path_task(distribution_name, distribution_type):
 
     set_variable_command = (
         'echo ##vso[task.setVariable variable=DIST_FILE_PATH]'
-        + '$(ls $PWD/dist-selected/*)'
+        + '$(ls ${PWD}/dist-selected/*)'
     )
 
     return BashStep(
