@@ -1,3 +1,5 @@
+import pathlib
+
 import importlib_resources
 import pytest
 import yaml
@@ -28,7 +30,11 @@ def azure_yaml():
 
 
 def test_dump_to_azure(configuration, azure_yaml):
-    pipeline = ciborg.azure.create_pipeline(configuration=configuration)
+    pipeline = ciborg.azure.create_pipeline(
+        configuration=configuration,
+        configuration_path=pathlib.Path('ciborg.json'),
+        output_path=pathlib.Path('azure-pipelines.yml'),
+    )
     dumped_pipeline = ciborg.azure.dump_pipeline(pipeline=pipeline)
 
     assert azure_yaml == dumped_pipeline
