@@ -53,6 +53,26 @@ def create_download_build_artifacts_task_step(download_path, artifact_name):
     )
 
 
+def create_set_dist_file_path_task(distribution_type):
+    if distribution_type == 'sdist':
+        only_or_no_binary = '--no-binary :all:'
+    elif distribution_type == 'bdist':
+        only_or_no_binary = '--only-binary :all:'
+    else:
+        raise Exception(
+            'Unexpected distribution type: {!r}'.format(distribution_type),
+        )
+
+    return BashStep(
+        display_name='Select distribution file',
+        script='\n'.join([
+            'python -m pip download --no-deps {only_or_no_binary} --find-links dist/ --dest dist-selected/'.format(only_or_no_binary=only_or_no_binary),
+            'echo ##vso[task.setVariable variable=DIST_FILE_PATH]$(ls $PWD/dist-selected/*)',
+        ]),
+        fail_on_stderr=True,
+    )
+
+
 def create_sdist_job(vm_image):
     use_python_version_step = create_use_python_version_task_step(
         version_spec='3.7',
@@ -264,7 +284,7 @@ class Environment:
         return 'pypy{}'.format(self.version[0])
 
 
-def create_tox_test_job(build_job, environment, extension):
+def create_tox_test_job(build_job, environment, distribution_type):
     use_python_version_step = create_use_python_version_task_step(
         version_spec=environment.version,
         architecture='x64',
@@ -275,14 +295,21 @@ def create_tox_test_job(build_job, environment, extension):
         artifact_name='dist',
     )
 
+    select_dist_step = create_set_dist_file_path_task(
+        distribution_type=distribution_type,
+    )
+
     bash_step = BashStep(
         display_name='Tox',
         script='\n'.join([
             'python -m pip install --quiet --upgrade pip setuptools wheel',
             'python -m pip install tox',
-            'python -m tox --installpkg="dist/*{}"'.format(extension),
+            'python -m tox --installpkg="${DIST_FILE_PATH}"',
         ]),
-        environment={'TOXENV': environment.tox_env()},
+        environment={
+            'DIST_FILE_PATH': '$(DIST_FILE_PATH)',
+            'TOXENV': environment.tox_env(),
+        },
     )
 
     job = Job(
@@ -295,6 +322,7 @@ def create_tox_test_job(build_job, environment, extension):
         steps=[
             use_python_version_step,
             download_task_step,
+            select_dist_step,
             bash_step,
         ],
         depends_on=[build_job],
@@ -334,16 +362,11 @@ def create_pipeline(configuration):
             'bdist': bdist_job,
         }[environment.install_source]
 
-        extension = {
-            'sdist': '.zip',
-            'bdist': '.whl',
-        }[environment.install_source]
-
         jobs = jobs.append(
             create_tox_test_job(
                 build_job=build_job,
                 environment=test_job_environment,
-                extension=extension,
+                distribution_type=environment.install_source,
             ),
         )
 
@@ -548,7 +571,10 @@ class BashStep:
     script = attr.ib()
     display_name = attr.ib()
     fail_on_stderr = attr.ib(default=True)
-    environment = attr.ib(default=pmap(), converter=pmap)
+    environment = attr.ib(
+        default=pmap(),
+        converter=lambda x: pmap(sorted(x.items())),
+    )
 
 
 class PoolSchema(marshmallow.Schema):
