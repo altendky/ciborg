@@ -15,7 +15,10 @@ stages:
       inputs:
         architecture: x64
         versionSpec: '3.7'
-    - bash: python setup.py sdist --format=zip
+    - bash: |-
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet --upgrade pep517
+        python -m pep517.build --source --out-dir dist/ .
       displayName: Build
       failOnStderr: true
     - task: PublishBuildArtifacts@1
@@ -35,8 +38,9 @@ stages:
         architecture: x64
         versionSpec: '3.7'
     - bash: |-
-        python -m pip install --quiet --upgrade pip setuptools wheel
-        python setup.py bdist_wheel
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet --upgrade pep517
+        python -m pep517.build --binary --out-dir dist/ .
       displayName: Build
       failOnStderr: true
     - task: PublishBuildArtifacts@1
@@ -65,8 +69,7 @@ stages:
         artifactName: dist
     - bash: |-
         ls ${PWD}/dist/*
-        python -m pip download --no-deps --no-binary :all: --find-links dist/ --dest dist-selected/ ciborg
-        echo "##vso[task.setvariable variable=DIST_FILE_PATH]$(ls ${PWD}/dist-selected/*)"
+        echo "##vso[task.setvariable variable=DIST_FILE_PATH]$(ls ${PWD}/dist/*.tar.gz)"
       displayName: Select distribution file
       failOnStderr: true
     - bash: |-
@@ -98,8 +101,7 @@ stages:
         artifactName: dist
     - bash: |-
         ls ${PWD}/dist/*
-        python -m pip download --no-deps --only-binary :all: --find-links dist/ --dest dist-selected/ ciborg
-        echo "##vso[task.setvariable variable=DIST_FILE_PATH]$(ls ${PWD}/dist-selected/*)"
+        echo "##vso[task.setvariable variable=DIST_FILE_PATH]$(ls ${PWD}/dist/*.whl)"
       displayName: Select distribution file
       failOnStderr: true
     - bash: |-

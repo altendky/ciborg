@@ -55,33 +55,36 @@ def create_download_build_artifacts_task_step(download_path, artifact_name):
 
 def create_set_dist_file_path_task(distribution_name, distribution_type):
     if distribution_type == 'sdist':
-        only_or_no_binary = '--no-binary :all:'
+        # only_or_no_binary = '--no-binary :all:'
+        extension = '.tar.gz'
     elif distribution_type == 'bdist':
-        only_or_no_binary = '--only-binary :all:'
+        # only_or_no_binary = '--only-binary :all:'
+        extension = '.whl'
     else:
         raise Exception(
             'Unexpected distribution type: {!r}'.format(distribution_type),
         )
 
-    download_command_format = (
-        'python -m pip download --no-deps {only_or_no_binary}'
-        + ' --find-links dist/ --dest dist-selected/ {package}'
-    )
-    download_command = download_command_format.format(
-        only_or_no_binary=only_or_no_binary,
-        package=distribution_name,
-    )
+    # download_command_format = (
+    #     'python -m pip download --no-deps {only_or_no_binary}'
+    #     + ' --find-links dist/ --dest dist-selected/ {package}'
+    # )
+    # download_command = download_command_format.format(
+    #     only_or_no_binary=only_or_no_binary,
+    #     package=distribution_name,
+    # )
 
     set_variable_command = (
         'echo "##vso[task.setvariable variable=DIST_FILE_PATH]'
-        + '$(ls ${PWD}/dist-selected/*)"'
+        # + '$(ls ${PWD}/dist-selected/*)"'
+        + '$(ls ${{PWD}}/dist/*{})"'.format(extension)
     )
 
     return BashStep(
         display_name='Select distribution file',
         script='\n'.join([
             'ls ${PWD}/dist/*',
-            download_command,
+            # download_command,
             set_variable_command,
         ]),
         fail_on_stderr=True,
@@ -97,7 +100,9 @@ def create_sdist_job(vm_image):
     bash_step = BashStep(
         display_name='Build',
         script='\n'.join([
-            'python setup.py sdist --format=zip',
+            'python -m pip install --quiet --upgrade pip',
+            'python -m pip install --quiet --upgrade pep517',
+            'python -m pep517.build --source --out-dir dist/ .',
         ]),
     )
 
@@ -129,8 +134,9 @@ def create_bdist_wheel_pure_job(vm_image):
     bash_step = BashStep(
         display_name='Build',
         script='\n'.join([
-            'python -m pip install --quiet --upgrade pip setuptools wheel',
-            'python setup.py bdist_wheel',
+            'python -m pip install --quiet --upgrade pip',
+            'python -m pip install --quiet --upgrade pep517',
+            'python -m pep517.build --binary --out-dir dist/ .',
         ]),
     )
 
