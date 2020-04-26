@@ -41,6 +41,113 @@ def create_publish_build_artifacts_task_step(path_to_publish, artifact_name):
     )
 
 
+def create_download_build_artifacts_task_step(download_path, artifact_name):
+    return TaskStep(
+        task='DownloadBuildArtifacts@0',
+        display_name='Download',
+        id_name='download',
+        inputs=DownloadBuildArtifactsTaskStep(
+            download_path=download_path,
+            artifact_name=artifact_name,
+        ),
+    )
+
+
+def create_set_dist_file_path_task(distribution_name, distribution_type):
+    if distribution_type == 'sdist':
+        # only_or_no_binary = '--no-binary :all:'
+        extension = '.tar.gz'
+    elif distribution_type == 'bdist':
+        # only_or_no_binary = '--only-binary :all:'
+        extension = '.whl'
+    else:
+        raise Exception(
+            'Unexpected distribution type: {!r}'.format(distribution_type),
+        )
+
+    # download_command_format = (
+    #     'python -m pip download --no-deps {only_or_no_binary}'
+    #     + ' --find-links dist/ --dest dist-selected/ {package}'
+    # )
+    # download_command = download_command_format.format(
+    #     only_or_no_binary=only_or_no_binary,
+    #     package=distribution_name,
+    # )
+
+    set_variable_command = (
+        'echo "##vso[task.setvariable variable=DIST_FILE_PATH]'
+        # + '$(ls ${PWD}/dist-selected/*)"'
+        + '$(ls ${{PWD}}/dist/*{})"'.format(extension)
+    )
+
+    return BashStep(
+        display_name='Select distribution file',
+        script='\n'.join([
+            'ls ${PWD}/dist/*',
+            # download_command,
+            set_variable_command,
+        ]),
+        fail_on_stderr=True,
+    )
+
+
+def create_verity_up_to_date_job(
+        vm_image,
+        configuration_path,
+        output_path,
+        ciborg_requirement,
+):
+    use_python_version_step = create_use_python_version_task_step(
+        version_spec='3.7',
+        architecture='x64',
+    )
+
+    installation_step = BashStep(
+        display_name='Install ciborg',
+        script='\n'.join([
+            'python -m pip install --upgrade pip setuptools',
+            'python -m pip install "{}"'.format(ciborg_requirement),
+        ]),
+    )
+
+    generation_command_format = (
+        'python -m ciborg azure --configuration {configuration}'
+        + ' --output {output}'
+    )
+    generation_command = generation_command_format.format(
+        configuration=configuration_path,
+        output=configuration_path.parent / output_path,
+    )
+
+    generation_step = BashStep(
+        display_name='Generate',
+        script='\n'.join([
+            generation_command,
+        ]),
+    )
+
+    verification_step = BashStep(
+        display_name='Verify',
+        script='\n'.join([
+            '[ -z "$(git status --porcelain)" ]',
+        ]),
+    )
+
+    job = Job(
+        id_name='verify_up_to_date',
+        display_name='Verify up to date',
+        steps=[
+            use_python_version_step,
+            installation_step,
+            generation_step,
+            verification_step,
+        ],
+        pool=Pool(vm_image=vm_image),
+    )
+
+    return job
+
+
 def create_sdist_job(vm_image):
     use_python_version_step = create_use_python_version_task_step(
         version_spec='3.7',
@@ -50,7 +157,9 @@ def create_sdist_job(vm_image):
     bash_step = BashStep(
         display_name='Build',
         script='\n'.join([
-            'python setup.py sdist --format=zip',
+            'python -m pip install --quiet --upgrade pip',
+            'python -m pip install --quiet --upgrade pep517',
+            'python -m pep517.build --source --out-dir dist/ .',
         ]),
     )
 
@@ -82,8 +191,9 @@ def create_bdist_wheel_pure_job(vm_image):
     bash_step = BashStep(
         display_name='Build',
         script='\n'.join([
-            'python -m pip install --quiet --upgrade pip setuptools wheel',
-            'python setup.py bdist_wheel',
+            'python -m pip install --quiet --upgrade pip',
+            'python -m pip install --quiet --upgrade pep517',
+            'python -m pep517.build --binary --out-dir dist/ .',
         ]),
     )
 
@@ -252,10 +362,25 @@ class Environment:
         return 'pypy{}'.format(self.version[0])
 
 
-def create_tox_test_job(build_job, environment):
+def create_tox_test_job(
+        build_job,
+        environment,
+        distribution_name,
+        distribution_type,
+):
     use_python_version_step = create_use_python_version_task_step(
         version_spec=environment.version,
         architecture='x64',
+    )
+
+    download_task_step = create_download_build_artifacts_task_step(
+        download_path='$(System.DefaultWorkingDirectory)/',
+        artifact_name='dist',
+    )
+
+    select_dist_step = create_set_dist_file_path_task(
+        distribution_name=distribution_name,
+        distribution_type=distribution_type,
     )
 
     bash_step = BashStep(
@@ -263,9 +388,12 @@ def create_tox_test_job(build_job, environment):
         script='\n'.join([
             'python -m pip install --quiet --upgrade pip setuptools wheel',
             'python -m pip install tox',
-            'python -m tox',
+            'python -m tox --installpkg="${DIST_FILE_PATH}"',
         ]),
-        environment={'TOXENV': environment.tox_env()},
+        environment={
+            'DIST_FILE_PATH': '$(DIST_FILE_PATH)',
+            'TOXENV': environment.tox_env(),
+        },
     )
 
     job = Job(
@@ -277,6 +405,8 @@ def create_tox_test_job(build_job, environment):
         display_name='Tox - {}'.format(environment.display_name()),
         steps=[
             use_python_version_step,
+            download_task_step,
+            select_dist_step,
             bash_step,
         ],
         depends_on=[build_job],
@@ -286,8 +416,16 @@ def create_tox_test_job(build_job, environment):
     return job
 
 
-def create_pipeline(configuration):
+def create_pipeline(configuration, configuration_path, output_path):
     jobs = pvector()
+
+    verify_job = create_verity_up_to_date_job(
+        vm_image=vm_images['linux'],
+        configuration_path=configuration_path,
+        output_path=output_path,
+        ciborg_requirement=configuration.ciborg_requirement,
+    )
+    jobs = jobs.append(verify_job)
 
     if configuration.build_sdist:
         sdist_job = create_sdist_job(vm_image=vm_images['linux'])
@@ -320,6 +458,8 @@ def create_pipeline(configuration):
             create_tox_test_job(
                 build_job=build_job,
                 environment=test_job_environment,
+                distribution_name=configuration.name,
+                distribution_type=environment.install_source,
             ),
         )
 
@@ -452,9 +592,24 @@ class PublishBuildArtifactsTaskStep:
     artifact_name = attr.ib()
 
 
+class DownloadBuildArtifactsTaskStepSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
+    download_path = marshmallow.fields.String(data_key='downloadPath')
+    artifact_name = marshmallow.fields.String(data_key='artifactName')
+
+
+@attr.s(frozen=True)
+class DownloadBuildArtifactsTaskStep:
+    download_path = attr.ib()
+    artifact_name = attr.ib()
+
+
 task_step_inputs_type_schema_map = pmap({
     UsePythonVersionTaskStep: UsePythonVersionTaskStepSchema,
     PublishBuildArtifactsTaskStep: PublishBuildArtifactsTaskStepSchema,
+    DownloadBuildArtifactsTaskStep: DownloadBuildArtifactsTaskStepSchema,
 })
 
 
@@ -509,7 +664,10 @@ class BashStep:
     script = attr.ib()
     display_name = attr.ib()
     fail_on_stderr = attr.ib(default=True)
-    environment = attr.ib(default=pmap(), converter=pmap)
+    environment = attr.ib(
+        default=pmap(),
+        converter=lambda x: collections.OrderedDict(sorted(x.items())),
+    )
 
 
 class PoolSchema(marshmallow.Schema):
