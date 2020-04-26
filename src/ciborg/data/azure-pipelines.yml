@@ -61,7 +61,7 @@ stages:
       name: download
       displayName: Download
       inputs:
-        downloadPath: $(System.DefaultWorkingDirectory)/dist/
+        downloadPath: $(System.DefaultWorkingDirectory)/
         artifactName: dist
     - bash: |-
         ls ${PWD}/dist/*
@@ -94,7 +94,7 @@ stages:
       name: download
       displayName: Download
       inputs:
-        downloadPath: $(System.DefaultWorkingDirectory)/dist/
+        downloadPath: $(System.DefaultWorkingDirectory)/
         artifactName: dist
     - bash: |-
         ls ${PWD}/dist/*

@@ -311,7 +311,7 @@ def create_tox_test_job(
     )
 
     download_task_step = create_download_build_artifacts_task_step(
-        download_path='$(System.DefaultWorkingDirectory)/dist/',
+        download_path='$(System.DefaultWorkingDirectory)/',
         artifact_name='dist',
     )
 
@@ -595,7 +595,7 @@ class BashStep:
     fail_on_stderr = attr.ib(default=True)
     environment = attr.ib(
         default=pmap(),
-        converter=lambda x: pmap(sorted(x.items())),
+        converter=lambda x: collections.OrderedDict(sorted(x.items())),
     )
 
 
