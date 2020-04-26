@@ -97,7 +97,9 @@ def create_sdist_job(vm_image):
     bash_step = BashStep(
         display_name='Build',
         script='\n'.join([
-            'python setup.py sdist --format=zip',
+            'python -m pip install --quiet --upgrade pip',
+            'python -m pip install --quiet --upgrade pep517',
+            'python -m pep517.build --source --out-dir dist/ .',
         ]),
     )
 
@@ -129,8 +131,9 @@ def create_bdist_wheel_pure_job(vm_image):
     bash_step = BashStep(
         display_name='Build',
         script='\n'.join([
-            'python -m pip install --quiet --upgrade pip setuptools wheel',
-            'python setup.py bdist_wheel',
+            'python -m pip install --quiet --upgrade pip',
+            'python -m pip install --quiet --upgrade pep517',
+            'python -m pep517.build --binary --out-dir dist/ .',
         ]),
     )
 
