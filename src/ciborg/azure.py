@@ -525,7 +525,7 @@ class DownloadBuildArtifactsTaskStepSchema(marshmallow.Schema):
     class Meta:
         ordered = True
 
-    download_path = marshmallow.fields.String(data_key='pathToPublish')
+    download_path = marshmallow.fields.String(data_key='downloadPath')
     artifact_name = marshmallow.fields.String(data_key='artifactName')
 
 
