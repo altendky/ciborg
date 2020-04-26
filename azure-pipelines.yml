@@ -1,4 +1,4 @@
-name: ciborg - blue
+name: ciborg
 trigger:
   batch: false
 stages:
