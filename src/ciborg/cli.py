@@ -35,13 +35,14 @@ def azure(configuration_file, output_file):
         marshalled,
     )
 
+    configuration_path = pathlib.Path(configuration_file.name)
     output_path = pathlib.Path(
-        os.path.relpath(output_file.name, configuration_file.name),
+        os.path.relpath(output_file.name, configuration_path.parent),
     )
 
     pipeline = ciborg.azure.create_pipeline(
         configuration=configuration,
-        configuration_path=pathlib.Path(configuration_file.name),
+        configuration_path=configuration_path,
         output_path=output_path,
     )
     dumped_pipeline = ciborg.azure.dump_pipeline(pipeline=pipeline)

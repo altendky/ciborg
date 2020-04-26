@@ -20,7 +20,7 @@ stages:
         python -m pip install "."
       displayName: Install ciborg
       failOnStderr: true
-    - bash: python -m ciborg azure --configuration ciborg.json --output ../azure-pipelines.yml
+    - bash: python -m ciborg azure --configuration ciborg.json --output azure-pipelines.yml
       displayName: Generate
       failOnStderr: true
     - bash: '[ -z "$(git status --porcelain)" ]'
