@@ -80,6 +80,7 @@ def create_set_dist_file_path_task(distribution_name, distribution_type):
     return BashStep(
         display_name='Select distribution file',
         script='\n'.join([
+            'ls ${PWD}/dist/*',
             download_command,
             set_variable_command,
         ]),

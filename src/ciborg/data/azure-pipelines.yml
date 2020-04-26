@@ -64,6 +64,7 @@ stages:
         pathToPublish: $(System.DefaultWorkingDirectory)/dist/
         artifactName: dist
     - bash: |-
+        ls ${PWD}/dist/*
         python -m pip download --no-deps --no-binary :all: --find-links dist/ --dest dist-selected/ ciborg
         echo ##vso[task.setVariable variable=DIST_FILE_PATH]$(ls $PWD/dist-selected/*)
       displayName: Select distribution file
@@ -96,6 +97,7 @@ stages:
         pathToPublish: $(System.DefaultWorkingDirectory)/dist/
         artifactName: dist
     - bash: |-
+        ls ${PWD}/dist/*
         python -m pip download --no-deps --only-binary :all: --find-links dist/ --dest dist-selected/ ciborg
         echo ##vso[task.setVariable variable=DIST_FILE_PATH]$(ls $PWD/dist-selected/*)
       displayName: Select distribution file
