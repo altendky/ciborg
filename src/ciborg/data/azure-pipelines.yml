@@ -57,13 +57,26 @@ stages:
       inputs:
         architecture: x64
         versionSpec: '3.7'
+    - task: DownloadBuildArtifacts@0
+      name: download
+      displayName: Download
+      inputs:
+        downloadPath: $(System.DefaultWorkingDirectory)/
+        artifactName: dist
+    - bash: |-
+        ls ${PWD}/dist/*
+        python -m pip download --no-deps --no-binary :all: --find-links dist/ --dest dist-selected/ ciborg
+        echo "##vso[task.setvariable variable=DIST_FILE_PATH]$(ls ${PWD}/dist-selected/*)"
+      displayName: Select distribution file
+      failOnStderr: true
     - bash: |-
         python -m pip install --quiet --upgrade pip setuptools wheel
         python -m pip install tox
-        python -m tox
+        python -m tox --installpkg="${DIST_FILE_PATH}"
       displayName: Tox
       failOnStderr: true
       env:
+        DIST_FILE_PATH: $(DIST_FILE_PATH)
         TOXENV: py37
   - job: tox_linux_py36_bdist
     displayName: Tox - py36
@@ -77,11 +90,24 @@ stages:
       inputs:
         architecture: x64
         versionSpec: '3.6'
+    - task: DownloadBuildArtifacts@0
+      name: download
+      displayName: Download
+      inputs:
+        downloadPath: $(System.DefaultWorkingDirectory)/
+        artifactName: dist
+    - bash: |-
+        ls ${PWD}/dist/*
+        python -m pip download --no-deps --only-binary :all: --find-links dist/ --dest dist-selected/ ciborg
+        echo "##vso[task.setvariable variable=DIST_FILE_PATH]$(ls ${PWD}/dist-selected/*)"
+      displayName: Select distribution file
+      failOnStderr: true
     - bash: |-
         python -m pip install --quiet --upgrade pip setuptools wheel
         python -m pip install tox
-        python -m tox
+        python -m tox --installpkg="${DIST_FILE_PATH}"
       displayName: Tox
       failOnStderr: true
       env:
+        DIST_FILE_PATH: $(DIST_FILE_PATH)
         TOXENV: py36
