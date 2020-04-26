@@ -91,6 +91,58 @@ def create_set_dist_file_path_task(distribution_name, distribution_type):
     )
 
 
+def create_verity_up_to_date_job(vm_image, configuration_path, output_path):
+    use_python_version_step = create_use_python_version_task_step(
+        version_spec='3.7',
+        architecture='x64',
+    )
+
+    installation_step = BashStep(
+        display_name='Install ciborg',
+        script='\n'.join([
+            'python -m pip install --upgrade pip setuptools',
+            'python -m pip install ciborg',
+        ]),
+    )
+
+    generation_command_format = (
+        'python -m ciborg azure --configuration {configuration}'
+        + ' --output {output}'
+    )
+    generation_command = generation_command_format.format(
+        configuration=configuration_path,
+        output=configuration_path.parent / output_path,
+    )
+
+    generation_step = BashStep(
+        display_name='Generate',
+        script='\n'.join([
+            generation_command,
+        ]),
+    )
+
+    verification_step = BashStep(
+        display_name='Verify',
+        script='\n'.join([
+            '[ -z "$(git status --porcelain)" ]',
+        ]),
+    )
+
+    job = Job(
+        id_name='verify_up_to_date',
+        display_name='Verify up to date',
+        steps=[
+            use_python_version_step,
+            installation_step,
+            generation_step,
+            verification_step,
+        ],
+        pool=Pool(vm_image=vm_image),
+    )
+
+    return job
+
+
 def create_sdist_job(vm_image):
     use_python_version_step = create_use_python_version_task_step(
         version_spec='3.7',
@@ -359,8 +411,15 @@ def create_tox_test_job(
     return job
 
 
-def create_pipeline(configuration):
+def create_pipeline(configuration, configuration_path, output_path):
     jobs = pvector()
+
+    verify_job = create_verity_up_to_date_job(
+        vm_image=vm_images['linux'],
+        configuration_path=configuration_path,
+        output_path=output_path,
+    )
+    jobs = jobs.append(verify_job)
 
     if configuration.build_sdist:
         sdist_job = create_sdist_job(vm_image=vm_images['linux'])
