@@ -98,6 +98,8 @@ stages:
         downloadPath: $(System.DefaultWorkingDirectory)/dist/
         artifactName: dist
     - bash: |-
+        sudo apt-get update --yes
+        sudo apt-get install --yes tree
         tree dist
         ls ${PWD}/dist/*
         python -m pip download --no-deps --only-binary :all: --find-links dist/ --dest dist-selected/ ciborg
