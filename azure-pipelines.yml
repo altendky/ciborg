@@ -17,7 +17,7 @@ stages:
         versionSpec: '3.7'
     - bash: |-
         python -m pip install --upgrade pip setuptools
-        python -m pip install ciborg
+        python -m pip install "."
       displayName: Install ciborg
       failOnStderr: true
     - bash: python -m ciborg azure --configuration ciborg.json --output ../azure-pipelines.yml

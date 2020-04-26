@@ -91,7 +91,12 @@ def create_set_dist_file_path_task(distribution_name, distribution_type):
     )
 
 
-def create_verity_up_to_date_job(vm_image, configuration_path, output_path):
+def create_verity_up_to_date_job(
+        vm_image,
+        configuration_path,
+        output_path,
+        ciborg_requirement,
+):
     use_python_version_step = create_use_python_version_task_step(
         version_spec='3.7',
         architecture='x64',
@@ -101,7 +106,7 @@ def create_verity_up_to_date_job(vm_image, configuration_path, output_path):
         display_name='Install ciborg',
         script='\n'.join([
             'python -m pip install --upgrade pip setuptools',
-            'python -m pip install ciborg',
+            'python -m pip install "{}"'.format(ciborg_requirement),
         ]),
     )
 
@@ -418,6 +423,7 @@ def create_pipeline(configuration, configuration_path, output_path):
         vm_image=vm_images['linux'],
         configuration_path=configuration_path,
         output_path=output_path,
+        ciborg_requirement=configuration.ciborg_requirement,
     )
     jobs = jobs.append(verify_job)
 

@@ -5,6 +5,8 @@ import marshmallow
 import marshmallow.fields
 import marshmallow.validate
 
+import ciborg
+
 
 def create_one_of_string(choices):
     return marshmallow.fields.String(
@@ -59,6 +61,7 @@ class ConfigurationSchema(marshmallow.Schema):
     test_environments = marshmallow.fields.List(
         marshmallow.fields.Nested(EnvironmentSchema()),
     )
+    ciborg_requirement = marshmallow.fields.String(allow_none=True)
 
     @marshmallow.decorators.post_load
     def post_load(self, data, partial, many):
@@ -71,6 +74,7 @@ class Configuration:
     build_sdist = attr.ib()
     build_wheel = attr.ib()
     test_environments = attr.ib()
+    ciborg_requirement = attr.ib(default=ciborg.__version__)
 
 
 def marshall(configuration):
