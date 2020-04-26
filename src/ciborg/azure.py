@@ -53,7 +53,7 @@ def create_download_build_artifacts_task_step(download_path, artifact_name):
     )
 
 
-def create_set_dist_file_path_task(distribution_type):
+def create_set_dist_file_path_task(distribution_name, distribution_type):
     if distribution_type == 'sdist':
         only_or_no_binary = '--no-binary :all:'
     elif distribution_type == 'bdist':
@@ -63,11 +63,25 @@ def create_set_dist_file_path_task(distribution_type):
             'Unexpected distribution type: {!r}'.format(distribution_type),
         )
 
+    download_command_format = (
+        'python -m pip download --no-deps {only_or_no_binary}'
+        + ' --find-links dist/ --dest dist-selected/ {package}'
+    )
+    download_command = download_command_format.format(
+        only_or_no_binary=only_or_no_binary,
+        package=distribution_name,
+    )
+
+    set_variable_command = (
+        'echo ##vso[task.setVariable variable=DIST_FILE_PATH]'
+        + '$(ls $PWD/dist-selected/*)'
+    )
+
     return BashStep(
         display_name='Select distribution file',
         script='\n'.join([
-            'python -m pip download --no-deps {only_or_no_binary} --find-links dist/ --dest dist-selected/'.format(only_or_no_binary=only_or_no_binary),
-            'echo ##vso[task.setVariable variable=DIST_FILE_PATH]$(ls $PWD/dist-selected/*)',
+            download_command,
+            set_variable_command,
         ]),
         fail_on_stderr=True,
     )
@@ -284,7 +298,12 @@ class Environment:
         return 'pypy{}'.format(self.version[0])
 
 
-def create_tox_test_job(build_job, environment, distribution_type):
+def create_tox_test_job(
+        build_job,
+        environment,
+        distribution_name,
+        distribution_type,
+):
     use_python_version_step = create_use_python_version_task_step(
         version_spec=environment.version,
         architecture='x64',
@@ -296,6 +315,7 @@ def create_tox_test_job(build_job, environment, distribution_type):
     )
 
     select_dist_step = create_set_dist_file_path_task(
+        distribution_name=distribution_name,
         distribution_type=distribution_type,
     )
 
@@ -366,6 +386,7 @@ def create_pipeline(configuration):
             create_tox_test_job(
                 build_job=build_job,
                 environment=test_job_environment,
+                distribution_name=configuration.name,
                 distribution_type=environment.install_source,
             ),
         )
