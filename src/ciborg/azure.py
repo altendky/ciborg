@@ -91,7 +91,7 @@ def create_set_dist_file_path_task(distribution_name, distribution_type):
     )
 
 
-def create_verity_up_to_date_job(
+def create_verify_up_to_date_job(
         vm_image,
         configuration_path,
         output_path,
@@ -210,6 +210,33 @@ def create_bdist_wheel_pure_job(vm_image):
             bash_step,
             publish_task_step,
         ],
+        pool=Pool(vm_image=vm_image),
+    )
+
+    return job
+
+
+def create_all_job(vm_image, other_jobs):
+    use_python_version_step = create_use_python_version_task_step(
+        version_spec='3.7',
+        architecture='x64',
+    )
+
+    this_step = BashStep(
+        display_name='This',
+        script='\n'.join([
+            'python -m this',
+        ]),
+    )
+
+    job = Job(
+        id_name='all',
+        display_name='All',
+        steps=[
+            use_python_version_step,
+            this_step,
+        ],
+        depends_on=other_jobs,
         pool=Pool(vm_image=vm_image),
     )
 
@@ -419,7 +446,7 @@ def create_tox_test_job(
 def create_pipeline(configuration, configuration_path, output_path):
     jobs = pvector()
 
-    verify_job = create_verity_up_to_date_job(
+    verify_job = create_verify_up_to_date_job(
         vm_image=vm_images['linux'],
         configuration_path=configuration_path,
         output_path=output_path,
@@ -462,6 +489,9 @@ def create_pipeline(configuration, configuration_path, output_path):
                 distribution_type=environment.install_source,
             ),
         )
+
+    all_job = create_all_job(vm_image=vm_images['linux'], other_jobs=jobs)
+    jobs = jobs.append(all_job)
 
     stage = Stage(
         id_name='main',
