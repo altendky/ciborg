@@ -6,13 +6,31 @@
         {
             "platform": "linux",
             "interpreter": "cpython",
-            "version": "3.7",
+            "version": "3.6",
+            "install_source": "bdist"
+        },
+        {
+            "platform": "linux",
+            "interpreter": "cpython",
+            "version": "3.8",
             "install_source": "sdist"
         },
         {
             "platform": "linux",
             "interpreter": "cpython",
-            "version": "3.6",
+            "version": "3.8",
+            "install_source": "bdist"
+        },
+        {
+            "platform": "macos",
+            "interpreter": "cpython",
+            "version": "3.8",
+            "install_source": "bdist"
+        },
+        {
+            "platform": "windows",
+            "interpreter": "cpython",
+            "version": "3.8",
             "install_source": "bdist"
         }
     ],

@@ -258,17 +258,17 @@ vm_images = {
     'linux': VmImage(
         platform=platforms['linux'],
         display_name=platforms['linux'].display_name,
-        id_name='ubuntu-16.04',
+        id_name='ubuntu-latest',
     ),
     'macos': VmImage(
         platform=platforms['macos'],
         display_name=platforms['macos'].display_name,
-        id_name='macOS-10.13',
+        id_name='macOS-latest',
     ),
     'windows': VmImage(
         platform=platforms['windows'],
         display_name=platforms['windows'].display_name,
-        id_name='vs2017-win2016',
+        id_name='windows-latest',
     ),
 }
 
