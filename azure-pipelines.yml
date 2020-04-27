@@ -8,7 +8,7 @@ stages:
   - job: verify_up_to_date
     displayName: Verify up to date
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-latest
     continueOnError: true
     steps:
     - task: UsePythonVersion@0
@@ -29,7 +29,7 @@ stages:
   - job: sdist
     displayName: Build sdist
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-latest
     continueOnError: true
     steps:
     - task: UsePythonVersion@0
@@ -51,7 +51,7 @@ stages:
   - job: bdist
     displayName: Build pure wheel
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-latest
     continueOnError: true
     steps:
     - task: UsePythonVersion@0
@@ -73,7 +73,7 @@ stages:
   - job: tox_linux_py36_bdist
     displayName: Tox - py36
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-latest
     dependsOn:
     - bdist
     continueOnError: true
@@ -105,7 +105,7 @@ stages:
   - job: tox_linux_py38_sdist
     displayName: Tox - py38
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-latest
     dependsOn:
     - sdist
     continueOnError: true
@@ -137,7 +137,7 @@ stages:
   - job: tox_linux_py38_bdist
     displayName: Tox - py38
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-latest
     dependsOn:
     - bdist
     continueOnError: true
@@ -169,7 +169,7 @@ stages:
   - job: tox_macos_py38_bdist
     displayName: Tox - py38
     pool:
-      vmImage: macOS-10.13
+      vmImage: macOS-latest
     dependsOn:
     - bdist
     continueOnError: true
@@ -201,7 +201,7 @@ stages:
   - job: tox_windows_py38_bdist
     displayName: Tox - py38
     pool:
-      vmImage: vs2017-win2016
+      vmImage: windows-latest
     dependsOn:
     - bdist
     continueOnError: true
