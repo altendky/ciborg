@@ -1,5 +1,6 @@
 import pathlib
 
+import attr
 import importlib_resources
 import pytest
 import yaml
@@ -9,9 +10,19 @@ import ciborg.configuration
 
 
 @pytest.fixture
-def configuration():
+def raw_configuration():
     with importlib_resources.open_text(ciborg.data, 'ciborg.json') as file:
         configuration = ciborg.configuration.load(file)
+
+    return configuration
+
+
+@pytest.fixture
+def configuration(raw_configuration):
+    configuration = attr.evolve(
+        raw_configuration,
+        ciborg_requirement='ciborg==v1+test',
+    )
 
     return configuration
 
@@ -38,3 +49,9 @@ def test_dump_to_azure(configuration, azure_yaml):
     dumped_pipeline = ciborg.azure.dump_pipeline(pipeline=pipeline)
 
     assert azure_yaml == dumped_pipeline
+
+
+def test_configuration_defaults_to_version(raw_configuration):
+    expected = 'ciborg=={}'.format(ciborg.__version__)
+
+    assert raw_configuration.ciborg_requirement == expected

@@ -74,7 +74,9 @@ class Configuration:
     build_sdist = attr.ib()
     build_wheel = attr.ib()
     test_environments = attr.ib()
-    ciborg_requirement = attr.ib(default=ciborg.__version__)
+    ciborg_requirement = attr.ib(
+        default='ciborg=={version}'.format(version=ciborg.__version__),
+    )
 
 
 def marshall(configuration):
