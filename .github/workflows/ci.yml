@@ -87,7 +87,6 @@ jobs:
       uses: actions/download-artifact@v1
       with:
         name: dist
-        path: ./
     - name: Select distribution file
       run: |-
         ls ${PWD}/dist/*
