@@ -21,12 +21,15 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Install ciborg
+      shell: bash
       run: |-
         python -m pip install --upgrade pip setuptools
         python -m pip install "."
     - name: Generate
+      shell: bash
       run: python -m ciborg github --configuration ciborg.json --output .github/workflows/ci.yml
     - name: Verify
+      shell: bash
       run: '[ -z "$(git status --porcelain)" ]'
   sdist:
     name: Build sdist
@@ -40,6 +43,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Build
+      shell: bash
       run: |-
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet --upgrade pep517
@@ -61,6 +65,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Build
+      shell: bash
       run: |-
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet --upgrade pep517
@@ -89,10 +94,12 @@ jobs:
         name: dist
         path: dist
     - name: Select distribution file
+      shell: bash
       run: |-
         ls ${PWD}/dist/*
         echo ::set-env name=DIST_FILE_PATH::$(ls ${PWD}/dist/*.whl)
     - name: Tox
+      shell: bash
       run: |-
         python -m pip install --quiet --upgrade pip setuptools wheel
         python -m pip install tox
@@ -118,10 +125,12 @@ jobs:
         name: dist
         path: dist
     - name: Select distribution file
+      shell: bash
       run: |-
         ls ${PWD}/dist/*
         echo ::set-env name=DIST_FILE_PATH::$(ls ${PWD}/dist/*.tar.gz)
     - name: Tox
+      shell: bash
       run: |-
         python -m pip install --quiet --upgrade pip setuptools wheel
         python -m pip install tox
@@ -147,10 +156,12 @@ jobs:
         name: dist
         path: dist
     - name: Select distribution file
+      shell: bash
       run: |-
         ls ${PWD}/dist/*
         echo ::set-env name=DIST_FILE_PATH::$(ls ${PWD}/dist/*.whl)
     - name: Tox
+      shell: bash
       run: |-
         python -m pip install --quiet --upgrade pip setuptools wheel
         python -m pip install tox
@@ -176,10 +187,12 @@ jobs:
         name: dist
         path: dist
     - name: Select distribution file
+      shell: bash
       run: |-
         ls ${PWD}/dist/*
         echo ::set-env name=DIST_FILE_PATH::$(ls ${PWD}/dist/*.whl)
     - name: Tox
+      shell: bash
       run: |-
         python -m pip install --quiet --upgrade pip setuptools wheel
         python -m pip install tox
@@ -205,10 +218,12 @@ jobs:
         name: dist
         path: dist
     - name: Select distribution file
+      shell: bash
       run: |-
         ls ${PWD}/dist/*
         echo ::set-env name=DIST_FILE_PATH::$(ls ${PWD}/dist/*.whl)
     - name: Tox
+      shell: bash
       run: |-
         python -m pip install --quiet --upgrade pip setuptools wheel
         python -m pip install tox
@@ -234,4 +249,5 @@ jobs:
         python-version: '3.7'
         architecture: x64
     - name: This
+      shell: bash
       run: python -m this
