@@ -6,9 +6,12 @@ ciborg
 Assimilate your CI services
 
 First targeted service:
+
 - `Azure Pipelines`_
+- `GitHub Actions`_
 
 .. _Azure Pipelines: https://azure.microsoft.com/en-us/services/devops/pipelines/
+.. _GitHub Actions: https://github.com/features/actions
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/ciborg.svg
    :alt: PyPI version
