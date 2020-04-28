@@ -3,15 +3,15 @@ import pathlib
 import importlib_resources
 import pytest
 
-import ciborg.azure
+import ciborg.github
 import ciborg.configuration
 
 
 @pytest.fixture
-def azure_yaml():
+def github_yaml():
     opened_text = importlib_resources.open_text(
         ciborg.data,
-        'azure-pipelines.yml',
+        'github.yml',
     )
 
     with opened_text as file:
@@ -20,12 +20,12 @@ def azure_yaml():
     return content
 
 
-def test_dump_to_azure(configuration, azure_yaml):
-    pipeline = ciborg.azure.create_pipeline(
+def test_dump(configuration, github_yaml):
+    workflow = ciborg.github.create_workflow(
         configuration=configuration,
         configuration_path=pathlib.Path('ciborg.json'),
-        output_path=pathlib.Path('azure-pipelines.yml'),
+        output_path=pathlib.Path('github.yml'),
     )
-    dumped_pipeline = ciborg.azure.dump_pipeline(pipeline=pipeline)
+    dumped_workflow = ciborg.github.dump_workflow(pipeline=workflow)
 
-    assert azure_yaml == dumped_pipeline
+    assert github_yaml == dumped_workflow
