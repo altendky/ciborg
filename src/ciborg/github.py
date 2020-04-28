@@ -23,7 +23,7 @@ def create_tox_test_job(
     checkout_step = create_checkout_action_step()
 
     download_task_step = create_download_build_artifacts_action_step(
-        download_path='./',
+        download_path='dist',
         artifact_name='dist',
     )
 

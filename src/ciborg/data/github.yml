@@ -45,7 +45,7 @@ jobs:
         python -m pip install --quiet --upgrade pep517
         python -m pep517.build --source --out-dir dist/ .
     - name: Publish
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2
       with:
         name: dist
         path: dist/
@@ -66,7 +66,7 @@ jobs:
         python -m pip install --quiet --upgrade pep517
         python -m pep517.build --binary --out-dir dist/ .
     - name: Publish
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2
       with:
         name: dist
         path: dist/
@@ -84,10 +84,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Download
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v2
       with:
         name: dist
-        path: ./
+        path: dist
     - name: Select distribution file
       run: |-
         ls ${PWD}/dist/*
@@ -114,10 +114,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Download
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v2
       with:
         name: dist
-        path: ./
+        path: dist
     - name: Select distribution file
       run: |-
         ls ${PWD}/dist/*

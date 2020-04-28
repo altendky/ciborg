@@ -87,7 +87,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: dist
-        path: ./
+        path: dist
     - name: Select distribution file
       run: |-
         ls ${PWD}/dist/*
@@ -117,7 +117,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: dist
-        path: ./
+        path: dist
     - name: Select distribution file
       run: |-
         ls ${PWD}/dist/*
@@ -147,7 +147,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: dist
-        path: ./
+        path: dist
     - name: Select distribution file
       run: |-
         ls ${PWD}/dist/*
@@ -177,7 +177,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: dist
-        path: ./
+        path: dist
     - name: Select distribution file
       run: |-
         ls ${PWD}/dist/*
@@ -207,7 +207,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: dist
-        path: ./
+        path: dist
     - name: Select distribution file
       run: |-
         ls ${PWD}/dist/*
