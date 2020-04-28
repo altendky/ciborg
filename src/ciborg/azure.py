@@ -22,7 +22,7 @@ def load_template():
 def create_use_python_version_task_step(version_spec, architecture):
     return TaskStep(
         task='UsePythonVersion@0',
-        inputs=UsePythonVersionTaskStep(
+        inputs=UsePythonVersionTaskStepInputs(
             version_spec=version_spec,
             architecture=architecture,
         ),
@@ -603,7 +603,7 @@ class UsePythonVersionTaskStepSchema(marshmallow.Schema):
 
 
 @attr.s(frozen=True)
-class UsePythonVersionTaskStep:
+class UsePythonVersionTaskStepInputs:
     architecture = attr.ib()
     version_spec = attr.ib()
 
@@ -637,7 +637,7 @@ class DownloadBuildArtifactsTaskStep:
 
 
 task_step_inputs_type_schema_map = pmap({
-    UsePythonVersionTaskStep: UsePythonVersionTaskStepSchema,
+    UsePythonVersionTaskStepInputs: UsePythonVersionTaskStepSchema,
     PublishBuildArtifactsTaskStep: PublishBuildArtifactsTaskStepSchema,
     DownloadBuildArtifactsTaskStep: DownloadBuildArtifactsTaskStepSchema,
 })
@@ -732,7 +732,7 @@ class JobSchema(marshmallow.Schema):
     pool = marshmallow.fields.Nested(PoolSchema())
     depends_on = marshmallow.fields.List(
         marshmallow.fields.Pluck(
-            nested='JobSchema',
+            nested='ciborg.azure.JobSchema',
             field_name='id_name',
         ),
         data_key='dependsOn',
