@@ -20,6 +20,8 @@ def create_tox_test_job(
         architecture='x64',
     )
 
+    checkout_step = create_checkout_action_step()
+
     download_task_step = create_download_build_artifacts_action_step(
         download_path='./',
         artifact_name='dist',
@@ -52,6 +54,7 @@ def create_tox_test_job(
         display_name='Tox - {}'.format(environment.display_name()),
         steps=[
             use_python_version_step,
+            checkout_step,
             download_task_step,
             select_dist_step,
             bash_step,
@@ -168,10 +171,23 @@ class DownloadArtifactActionStep:
     path = attr.ib()
 
 
+class CheckoutActionStepSchema(marshmallow.Schema):
+    class Meta:
+        ordered = True
+
+    post_dump = ciborg.azure.post_dump_remove_skip_values
+
+
+@attr.s(frozen=True)
+class CheckoutActionStep:
+    pass
+
+
 task_step_inputs_type_schema_map = pmap({
     SetupPythonActionWith: SetupPythonActionWithSchema,
     UploadArtifactsActionStep: UploadArtifactsActionStepSchema,
     DownloadArtifactActionStep: DownloadArtifactActionStepSchema,
+    CheckoutActionStep: CheckoutActionStepSchema,
 })
 
 
@@ -333,6 +349,14 @@ def create_setup_python_action_step(python_version, architecture):
     )
 
 
+def create_checkout_action_step():
+    return ActionStep(
+        name='Checkout',
+        uses='actions/checkout@v2',
+        with_=CheckoutActionStep(),
+    )
+
+
 def create_publish_build_artifacts_task_step(path_to_publish, artifact_name):
     return ActionStep(
         uses='actions/upload-artifact@v1',
@@ -401,6 +425,8 @@ def create_verify_up_to_date_job(
         architecture='x64',
     )
 
+    checkout_step = create_checkout_action_step()
+
     installation_step = BashStep(
         name='Install ciborg',
         run='\n'.join([
@@ -437,6 +463,7 @@ def create_verify_up_to_date_job(
         display_name='Verify up to date',
         steps=[
             setup_python_step,
+            checkout_step,
             installation_step,
             generation_step,
             verification_step,
@@ -452,6 +479,8 @@ def create_sdist_job(vm_image):
         python_version='3.7',
         architecture='x64',
     )
+
+    checkout_step = create_checkout_action_step()
 
     bash_step = BashStep(
         name='Build',
@@ -472,6 +501,7 @@ def create_sdist_job(vm_image):
         display_name='Build sdist',
         steps=[
             use_python_version_step,
+            checkout_step,
             bash_step,
             publish_task_step,
         ],
@@ -486,6 +516,8 @@ def create_bdist_wheel_pure_job(vm_image):
         python_version='3.7',
         architecture='x64',
     )
+
+    checkout_step = create_checkout_action_step()
 
     bash_step = BashStep(
         name='Build',
@@ -506,6 +538,7 @@ def create_bdist_wheel_pure_job(vm_image):
         display_name='Build pure wheel',
         steps=[
             use_python_version_step,
+            checkout_step,
             bash_step,
             publish_task_step,
         ],
