@@ -32,13 +32,13 @@ def create_tox_test_job(
         distribution_type=distribution_type,
     )
 
-    bash_step = BashStep(
+    bash_step = create_bash_step(
         name='Tox',
-        run='\n'.join([
+        commands=[
             'python -m pip install --quiet --upgrade pip setuptools wheel',
             'python -m pip install tox',
             '''python -m tox --installpkg="${{ env['DIST_FILE_PATH'] }}"''',
-        ]),
+        ],
         environment={
             'TOXENV': environment.tox_env(),
         },
@@ -217,11 +217,21 @@ class ActionStep:
     with_ = attr.ib()
 
 
-class BashStepSchema(marshmallow.Schema):
+def create_bash_step(name, commands, environment=pmap()):
+    return RunStep(
+        name=name,
+        shell='bash',
+        run='\n'.join(commands),
+        environment=environment,
+    )
+
+
+class RunStepSchema(marshmallow.Schema):
     class Meta:
         ordered = True
 
     name = marshmallow.fields.String()
+    shell = marshmallow.fields.String()
     run = marshmallow.fields.String()
     environment = marshmallow.fields.Dict(
         keys=marshmallow.fields.String(),
@@ -233,8 +243,9 @@ class BashStepSchema(marshmallow.Schema):
 
 
 @attr.s(frozen=True)
-class BashStep:
+class RunStep:
     name = attr.ib()
+    shell = attr.ib()
     run = attr.ib()
     environment = attr.ib(
         default=pmap(),
@@ -244,7 +255,7 @@ class BashStep:
 
 step_type_schema_map = pmap({
     ActionStep: ActionStepSchema,
-    BashStep: BashStepSchema,
+    RunStep: RunStepSchema,
 })
 
 
@@ -404,12 +415,12 @@ def create_set_dist_file_path_task(distribution_name, distribution_type):
         + '$(ls ${{PWD}}/dist/*{extension})'.format(extension=extension)
     )
 
-    return BashStep(
+    return create_bash_step(
         name='Select distribution file',
-        run='\n'.join([
+        commands=[
             'ls ${PWD}/dist/*',
             set_variable_command,
-        ]),
+        ],
     )
 
 
@@ -426,12 +437,12 @@ def create_verify_up_to_date_job(
 
     checkout_step = create_checkout_action_step()
 
-    installation_step = BashStep(
+    installation_step = create_bash_step(
         name='Install ciborg',
-        run='\n'.join([
+        commands=[
             'python -m pip install --upgrade pip setuptools',
             'python -m pip install "{}"'.format(ciborg_requirement),
-        ]),
+        ],
     )
 
     generation_command_format = (
@@ -443,18 +454,18 @@ def create_verify_up_to_date_job(
         output=configuration_path.parent / output_path,
     )
 
-    generation_step = BashStep(
+    generation_step = create_bash_step(
         name='Generate',
-        run='\n'.join([
+        commands=[
             generation_command,
-        ]),
+        ],
     )
 
-    verification_step = BashStep(
+    verification_step = create_bash_step(
         name='Verify',
-        run='\n'.join([
+        commands=[
             '[ -z "$(git status --porcelain)" ]',
-        ]),
+        ],
     )
 
     job = Job(
@@ -481,13 +492,13 @@ def create_sdist_job(vm_image):
 
     checkout_step = create_checkout_action_step()
 
-    bash_step = BashStep(
+    bash_step = create_bash_step(
         name='Build',
-        run='\n'.join([
+        commands=[
             'python -m pip install --quiet --upgrade pip',
             'python -m pip install --quiet --upgrade pep517',
             'python -m pep517.build --source --out-dir dist/ .',
-        ]),
+        ],
     )
 
     publish_task_step = create_publish_build_artifacts_task_step(
@@ -518,13 +529,13 @@ def create_bdist_wheel_pure_job(vm_image):
 
     checkout_step = create_checkout_action_step()
 
-    bash_step = BashStep(
+    bash_step = create_bash_step(
         name='Build',
-        run='\n'.join([
+        commands=[
             'python -m pip install --quiet --upgrade pip',
             'python -m pip install --quiet --upgrade pep517',
             'python -m pep517.build --binary --out-dir dist/ .',
-        ]),
+        ],
     )
 
     publish_task_step = create_publish_build_artifacts_task_step(
@@ -553,11 +564,11 @@ def create_all_job(vm_image, other_jobs):
         architecture='x64',
     )
 
-    this_step = BashStep(
+    this_step = create_bash_step(
         name='This',
-        run='\n'.join([
+        commands=[
             'python -m this',
-        ]),
+        ],
     )
 
     job = Job(

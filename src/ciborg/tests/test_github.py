@@ -28,4 +28,7 @@ def test_dump(configuration, github_yaml):
     )
     dumped_workflow = ciborg.github.dump_workflow(pipeline=workflow)
 
+    with open('/home/altendky/repos/ciborg/src/ciborg/data/github-test.yml', 'w') as f:
+        f.write(dumped_workflow)
+
     assert github_yaml == dumped_workflow
