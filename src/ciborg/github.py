@@ -37,10 +37,9 @@ def create_tox_test_job(
         run='\n'.join([
             'python -m pip install --quiet --upgrade pip setuptools wheel',
             'python -m pip install tox',
-            'python -m tox --installpkg="${DIST_FILE_PATH}"',
+            '''python -m tox --installpkg="${{ env['DIST_FILE_PATH'] }}"''',
         ]),
         environment={
-            'DIST_FILE_PATH': '$(DIST_FILE_PATH)',
             'TOXENV': environment.tox_env(),
         },
     )
