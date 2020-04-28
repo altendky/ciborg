@@ -359,7 +359,7 @@ def create_checkout_action_step():
 
 def create_publish_build_artifacts_task_step(path_to_publish, artifact_name):
     return ActionStep(
-        uses='actions/upload-artifact@v1',
+        uses='actions/upload-artifact@v2',
         name='Publish',
         with_=DownloadArtifactActionStep(
             path=path_to_publish,
@@ -370,7 +370,7 @@ def create_publish_build_artifacts_task_step(path_to_publish, artifact_name):
 
 def create_download_build_artifacts_action_step(download_path, artifact_name):
     return ActionStep(
-        uses='actions/download-artifact@v1',
+        uses='actions/download-artifact@v2',
         name='Download',
         with_=DownloadArtifactActionStep(
             path=download_path,
