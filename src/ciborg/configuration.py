@@ -79,7 +79,7 @@ class Configuration:
     )
 
 
-def marshall(configuration):
+def marshal(configuration):
     marshalled = ConfigurationSchema().dump(configuration)
 
     return marshalled
