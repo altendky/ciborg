@@ -70,8 +70,8 @@ stages:
       inputs:
         pathToPublish: $(System.DefaultWorkingDirectory)/dist/
         artifactName: dist
-  - job: tox_linux_py36_bdist
-    displayName: Tox - py36
+  - job: tox_linux_cpython_3_6_bdist
+    displayName: Tox - Linux CPython 3.6 bdist
     pool:
       vmImage: ubuntu-latest
     dependsOn:
@@ -102,8 +102,8 @@ stages:
       env:
         DIST_FILE_PATH: $(DIST_FILE_PATH)
         TOXENV: py36
-  - job: tox_linux_py38_sdist
-    displayName: Tox - py38
+  - job: tox_linux_cpython_3_8_sdist
+    displayName: Tox - Linux CPython 3.8 sdist
     pool:
       vmImage: ubuntu-latest
     dependsOn:
@@ -134,8 +134,8 @@ stages:
       env:
         DIST_FILE_PATH: $(DIST_FILE_PATH)
         TOXENV: py38
-  - job: tox_linux_py38_bdist
-    displayName: Tox - py38
+  - job: tox_linux_cpython_3_8_bdist
+    displayName: Tox - Linux CPython 3.8 bdist
     pool:
       vmImage: ubuntu-latest
     dependsOn:
@@ -166,8 +166,8 @@ stages:
       env:
         DIST_FILE_PATH: $(DIST_FILE_PATH)
         TOXENV: py38
-  - job: tox_macos_py38_bdist
-    displayName: Tox - py38
+  - job: tox_macos_cpython_3_8_bdist
+    displayName: Tox - macOS CPython 3.8 bdist
     pool:
       vmImage: macOS-latest
     dependsOn:
@@ -198,8 +198,8 @@ stages:
       env:
         DIST_FILE_PATH: $(DIST_FILE_PATH)
         TOXENV: py38
-  - job: tox_windows_py38_bdist
-    displayName: Tox - py38
+  - job: tox_windows_cpython_3_8_bdist
+    displayName: Tox - Windows CPython 3.8 bdist
     pool:
       vmImage: windows-latest
     dependsOn:
@@ -238,11 +238,11 @@ stages:
     - verify_up_to_date
     - sdist
     - bdist
-    - tox_linux_py36_bdist
-    - tox_linux_py38_sdist
-    - tox_linux_py38_bdist
-    - tox_macos_py38_bdist
-    - tox_windows_py38_bdist
+    - tox_linux_cpython_3_6_bdist
+    - tox_linux_cpython_3_8_sdist
+    - tox_linux_cpython_3_8_bdist
+    - tox_macos_cpython_3_8_bdist
+    - tox_windows_cpython_3_8_bdist
     continueOnError: true
     steps:
     - task: UsePythonVersion@0

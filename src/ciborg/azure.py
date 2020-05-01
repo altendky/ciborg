@@ -9,7 +9,13 @@ import yaml
 
 from pyrsistent import pvector, pmap, pset
 
+import ciborg.configuration
 import ciborg.data
+
+
+tooling_python_version = (
+    ciborg.configuration.python_version_by_identifier_string['3.7']
+)
 
 
 def load_template():
@@ -23,7 +29,7 @@ def create_use_python_version_task_step(version_spec, architecture):
     return TaskStep(
         task='UsePythonVersion@0',
         inputs=UsePythonVersionTaskStepInputs(
-            version_spec=version_spec,
+            version_spec=version_spec.joined_by('.'),
             architecture=architecture,
         ),
     )
@@ -54,10 +60,10 @@ def create_download_build_artifacts_task_step(download_path, artifact_name):
 
 
 def create_set_dist_file_path_task(distribution_name, distribution_type):
-    if distribution_type == 'sdist':
+    if distribution_type == ciborg.configuration.sdist_install_source:
         # only_or_no_binary = '--no-binary :all:'
         extension = '.tar.gz'
-    elif distribution_type == 'bdist':
+    elif distribution_type == ciborg.configuration.bdist_install_source:
         # only_or_no_binary = '--only-binary :all:'
         extension = '.whl'
     else:
@@ -98,7 +104,7 @@ def create_verify_up_to_date_job(
         ciborg_requirement,
 ):
     use_python_version_step = create_use_python_version_task_step(
-        version_spec='3.7',
+        version_spec=tooling_python_version,
         architecture='x64',
     )
 
@@ -150,7 +156,7 @@ def create_verify_up_to_date_job(
 
 def create_sdist_job(vm_image):
     use_python_version_step = create_use_python_version_task_step(
-        version_spec='3.7',
+        version_spec=tooling_python_version,
         architecture='x64',
     )
 
@@ -184,7 +190,7 @@ def create_sdist_job(vm_image):
 
 def create_bdist_wheel_pure_job(vm_image):
     use_python_version_step = create_use_python_version_task_step(
-        version_spec='3.7',
+        version_spec=tooling_python_version,
         architecture='x64',
     )
 
@@ -218,7 +224,7 @@ def create_bdist_wheel_pure_job(vm_image):
 
 def create_all_job(vm_image, other_jobs):
     use_python_version_step = create_use_python_version_task_step(
-        version_spec='3.7',
+        version_spec=tooling_python_version,
         architecture='x64',
     )
 
@@ -282,17 +288,17 @@ class VmImage:
 
 
 vm_images = {
-    'linux': VmImage(
+    ciborg.configuration.linux_platform: VmImage(
         platform=platforms['linux'],
         display_name=platforms['linux'].display_name,
         id_name='ubuntu-latest',
     ),
-    'macos': VmImage(
+    ciborg.configuration.macos_platform: VmImage(
         platform=platforms['macos'],
         display_name=platforms['macos'].display_name,
         id_name='macOS-latest',
     ),
-    'windows': VmImage(
+    ciborg.configuration.windows_platform: VmImage(
         platform=platforms['windows'],
         display_name=platforms['windows'].display_name,
         id_name='windows-latest',
@@ -356,6 +362,8 @@ class Environment:
     interpreter = attr.ib()
     version = attr.ib()
     architecture = attr.ib()
+    display_string = attr.ib()
+    identifier_string = attr.ib()
 
     @classmethod
     def build(cls, platform, interpreter, version, architecture):
@@ -374,13 +382,9 @@ class Environment:
             if self.version[0] == '3':
                 env += '3'
         else:
-            env += self.version.replace('.', '')
+            env += self.version.joined_by('')
 
         return env
-
-    def display_name(self):
-        # TODO: really implement this
-        return self.tox_env()
 
     def matrix_version(self):
         if self.interpreter == 'CPython':
@@ -424,12 +428,8 @@ def create_tox_test_job(
     )
 
     job = Job(
-        id_name='tox_{platform}_{tox_env}_{dist_type}'.format(
-            platform=environment.platform.identifier(),
-            tox_env=environment.tox_env(),
-            dist_type=build_job.id_name,
-        ),
-        display_name='Tox - {}'.format(environment.display_name()),
+        id_name='tox_{}'.format(environment.identifier_string),
+        display_name='Tox - {}'.format(environment.display_string),
         steps=[
             use_python_version_step,
             download_task_step,
@@ -447,7 +447,7 @@ def create_pipeline(configuration, configuration_path, output_path):
     jobs = pvector()
 
     verify_job = create_verify_up_to_date_job(
-        vm_image=vm_images['linux'],
+        vm_image=vm_images[ciborg.configuration.linux_platform],
         configuration_path=configuration_path,
         output_path=output_path,
         ciborg_requirement=configuration.ciborg_requirement,
@@ -455,12 +455,14 @@ def create_pipeline(configuration, configuration_path, output_path):
     jobs = jobs.append(verify_job)
 
     if configuration.build_sdist:
-        sdist_job = create_sdist_job(vm_image=vm_images['linux'])
+        sdist_job = create_sdist_job(
+            vm_image=vm_images[ciborg.configuration.linux_platform],
+        )
         jobs = jobs.append(sdist_job)
 
     if configuration.build_wheel == 'universal':
         bdist_job = create_bdist_wheel_pure_job(
-            vm_image=vm_images['linux'],
+            vm_image=vm_images[ciborg.configuration.linux_platform],
         )
         jobs = jobs.append(bdist_job)
     # elif configuration.build_wheel == 'specific':
@@ -474,11 +476,13 @@ def create_pipeline(configuration, configuration_path, output_path):
             interpreter=environment.interpreter,
             version=environment.version,
             architecture=None,
+            display_string=environment.display_name(),
+            identifier_string=environment.identifier(),
         )
 
         build_job = {
-            'sdist': sdist_job,
-            'bdist': bdist_job,
+            ciborg.configuration.sdist_install_source: sdist_job,
+            ciborg.configuration.bdist_install_source: bdist_job,
         }[environment.install_source]
 
         jobs = jobs.append(
@@ -490,7 +494,10 @@ def create_pipeline(configuration, configuration_path, output_path):
             ),
         )
 
-    all_job = create_all_job(vm_image=vm_images['linux'], other_jobs=jobs)
+    all_job = create_all_job(
+        vm_image=vm_images[ciborg.configuration.linux_platform],
+        other_jobs=jobs,
+    )
     jobs = jobs.append(all_job)
 
     stage = Stage(
