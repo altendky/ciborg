@@ -7,6 +7,12 @@ from pyrsistent import pvector, pmap, pset
 import yaml
 
 import ciborg.azure
+import ciborg.configuration
+
+
+tooling_python_version = (
+    ciborg.configuration.python_version_by_identifier_string['3.7']
+)
 
 
 def create_tox_test_job(
@@ -45,12 +51,8 @@ def create_tox_test_job(
     )
 
     job = Job(
-        id_name='tox_{platform}_{tox_env}_{dist_type}'.format(
-            platform=environment.platform.identifier(),
-            tox_env=environment.tox_env(),
-            dist_type=build_job.id_name,
-        ),
-        display_name='Tox - {}'.format(environment.display_name()),
+        id_name='tox_{}'.format(environment.identifier_string),
+        display_name='Tox - {}'.format(environment.display_string),
         steps=[
             use_python_version_step,
             checkout_step,
@@ -350,10 +352,10 @@ class Workflow:
 
 def create_setup_python_action_step(python_version, architecture):
     return ActionStep(
-        name='Set up CPython {}'.format(python_version),
+        name='Set up CPython {}'.format(python_version.display_string),
         uses='actions/setup-python@v1',
         with_=SetupPythonActionWith(
-            python_version=python_version,
+            python_version=python_version.display_string,
             architecture=architecture,
         ),
     )
@@ -390,10 +392,10 @@ def create_download_build_artifacts_action_step(download_path, artifact_name):
 
 
 def create_set_dist_file_path_task(distribution_name, distribution_type):
-    if distribution_type == 'sdist':
+    if distribution_type == ciborg.configuration.sdist_install_source:
         # only_or_no_binary = '--no-binary :all:'
         extension = '.tar.gz'
-    elif distribution_type == 'bdist':
+    elif distribution_type == ciborg.configuration.bdist_install_source:
         # only_or_no_binary = '--only-binary :all:'
         extension = '.whl'
     else:
@@ -431,7 +433,7 @@ def create_verify_up_to_date_job(
         ciborg_requirement,
 ):
     setup_python_step = create_setup_python_action_step(
-        python_version='3.7',
+        python_version=tooling_python_version,
         architecture='x64',
     )
 
@@ -486,7 +488,7 @@ def create_verify_up_to_date_job(
 
 def create_sdist_job(vm_image):
     use_python_version_step = create_setup_python_action_step(
-        python_version='3.7',
+        python_version=tooling_python_version,
         architecture='x64',
     )
 
@@ -523,7 +525,7 @@ def create_sdist_job(vm_image):
 
 def create_bdist_wheel_pure_job(vm_image):
     use_python_version_step = create_setup_python_action_step(
-        python_version='3.7',
+        python_version=tooling_python_version,
         architecture='x64',
     )
 
@@ -560,7 +562,7 @@ def create_bdist_wheel_pure_job(vm_image):
 
 def create_all_job(vm_image, other_jobs):
     use_python_version_step = create_setup_python_action_step(
-        python_version='3.7',
+        python_version=tooling_python_version,
         architecture='x64',
     )
 
@@ -589,7 +591,7 @@ def create_workflow(configuration, configuration_path, output_path):
     jobs = pvector()
 
     verify_job = create_verify_up_to_date_job(
-        vm_image=ciborg.azure.vm_images['linux'],
+        vm_image=ciborg.azure.vm_images[ciborg.configuration.linux_platform],
         configuration_path=configuration_path,
         output_path=output_path,
         ciborg_requirement=configuration.ciborg_requirement,
@@ -597,12 +599,18 @@ def create_workflow(configuration, configuration_path, output_path):
     jobs = jobs.append(verify_job)
 
     if configuration.build_sdist:
-        sdist_job = create_sdist_job(vm_image=ciborg.azure.vm_images['linux'])
+        sdist_job = create_sdist_job(
+            vm_image=ciborg.azure.vm_images[
+                ciborg.configuration.linux_platform
+            ],
+        )
         jobs = jobs.append(sdist_job)
 
     if configuration.build_wheel == 'universal':
         bdist_job = create_bdist_wheel_pure_job(
-            vm_image=ciborg.azure.vm_images['linux'],
+            vm_image=ciborg.azure.vm_images[
+                ciborg.configuration.linux_platform
+            ],
         )
         jobs = jobs.append(bdist_job)
     # elif configuration.build_wheel == 'specific':
@@ -616,11 +624,13 @@ def create_workflow(configuration, configuration_path, output_path):
             interpreter=environment.interpreter,
             version=environment.version,
             architecture=None,
+            display_string=environment.display_name(),
+            identifier_string=environment.identifier(),
         )
 
         build_job = {
-            'sdist': sdist_job,
-            'bdist': bdist_job,
+            ciborg.configuration.sdist_install_source: sdist_job,
+            ciborg.configuration.bdist_install_source: bdist_job,
         }[environment.install_source]
 
         jobs = jobs.append(
@@ -632,7 +642,10 @@ def create_workflow(configuration, configuration_path, output_path):
             ),
         )
 
-    all_job = create_all_job(vm_image=ciborg.azure.vm_images['linux'], other_jobs=jobs)
+    all_job = create_all_job(
+        vm_image=ciborg.azure.vm_images[ciborg.configuration.linux_platform],
+        other_jobs=jobs,
+    )
     jobs = jobs.append(all_job)
 
     pipeline = Workflow(
