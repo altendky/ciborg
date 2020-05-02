@@ -2,6 +2,11 @@
     "name": "ciborg",
     "build_sdist": true,
     "build_wheel": "universal",
+    "tooling_environment": {
+        "platform": "linux",
+        "interpreter": "cpython",
+        "version": "3.8"
+    },
     "test_environments": [
         {
             "platform": "linux",
