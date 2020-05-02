@@ -13,11 +13,6 @@ import ciborg.configuration
 import ciborg.data
 
 
-tooling_python_version = (
-    ciborg.configuration.python_version_by_identifier_string['3.7']
-)
-
-
 def load_template():
     with importlib_resources.open_text(ciborg.data, 'azure.yml') as file:
         template = yaml.safe_load(file)
@@ -98,13 +93,13 @@ def create_set_dist_file_path_task(distribution_name, distribution_type):
 
 
 def create_verify_up_to_date_job(
-        vm_image,
+        environment,
         configuration_path,
         output_path,
         ciborg_requirement,
 ):
     use_python_version_step = create_use_python_version_task_step(
-        version_spec=tooling_python_version,
+        version_spec=environment.version,
         architecture='x64',
     )
 
@@ -148,15 +143,15 @@ def create_verify_up_to_date_job(
             generation_step,
             verification_step,
         ],
-        pool=Pool(vm_image=vm_image),
+        pool=Pool(vm_image=environment.vm_image),
     )
 
     return job
 
 
-def create_sdist_job(vm_image):
+def create_sdist_job(environment):
     use_python_version_step = create_use_python_version_task_step(
-        version_spec=tooling_python_version,
+        version_spec=environment.version,
         architecture='x64',
     )
 
@@ -182,15 +177,15 @@ def create_sdist_job(vm_image):
             bash_step,
             publish_task_step,
         ],
-        pool=Pool(vm_image=vm_image),
+        pool=Pool(vm_image=environment.vm_image),
     )
 
     return sdist_job
 
 
-def create_bdist_wheel_pure_job(vm_image):
+def create_bdist_wheel_pure_job(environment):
     use_python_version_step = create_use_python_version_task_step(
-        version_spec=tooling_python_version,
+        version_spec=environment.version,
         architecture='x64',
     )
 
@@ -216,15 +211,15 @@ def create_bdist_wheel_pure_job(vm_image):
             bash_step,
             publish_task_step,
         ],
-        pool=Pool(vm_image=vm_image),
+        pool=Pool(vm_image=environment.vm_image),
     )
 
     return job
 
 
-def create_all_job(vm_image, other_jobs):
+def create_all_job(environment, other_jobs):
     use_python_version_step = create_use_python_version_task_step(
-        version_spec=tooling_python_version,
+        version_spec=environment.version,
         architecture='x64',
     )
 
@@ -243,7 +238,7 @@ def create_all_job(vm_image, other_jobs):
             this_step,
         ],
         depends_on=other_jobs,
-        pool=Pool(vm_image=vm_image),
+        pool=Pool(vm_image=environment.vm_image),
     )
 
     return job
@@ -366,13 +361,23 @@ class Environment:
     identifier_string = attr.ib()
 
     @classmethod
-    def build(cls, platform, interpreter, version, architecture):
+    def build(
+            cls,
+            platform,
+            interpreter,
+            version,
+            architecture,
+            display_string,
+            identifier_string,
+    ):
         return cls(
             platform=platform,
             vm_image=vm_images[platform],
             interpreter=interpreter,
             version=version,
             architecture=architecture,
+            display_string=display_string,
+            identifier_string=identifier_string,
         )
 
     def tox_env(self):
@@ -446,8 +451,17 @@ def create_tox_test_job(
 def create_pipeline(configuration, configuration_path, output_path):
     jobs = pvector()
 
+    tooling_environment = Environment.build(
+        platform=configuration.tooling_environment.platform,
+        interpreter=configuration.tooling_environment.interpreter,
+        version=configuration.tooling_environment.version,
+        architecture='x64',
+        display_string=configuration.tooling_environment.display_name(),
+        identifier_string=configuration.tooling_environment.identifier(),
+    )
+
     verify_job = create_verify_up_to_date_job(
-        vm_image=vm_images[ciborg.configuration.linux_platform],
+        environment=tooling_environment,
         configuration_path=configuration_path,
         output_path=output_path,
         ciborg_requirement=configuration.ciborg_requirement,
@@ -455,24 +469,19 @@ def create_pipeline(configuration, configuration_path, output_path):
     jobs = jobs.append(verify_job)
 
     if configuration.build_sdist:
-        sdist_job = create_sdist_job(
-            vm_image=vm_images[ciborg.configuration.linux_platform],
-        )
+        sdist_job = create_sdist_job(environment=tooling_environment)
         jobs = jobs.append(sdist_job)
 
     if configuration.build_wheel == 'universal':
         bdist_job = create_bdist_wheel_pure_job(
-            vm_image=vm_images[ciborg.configuration.linux_platform],
+            environment=tooling_environment,
         )
         jobs = jobs.append(bdist_job)
     # elif configuration.build_wheel == 'specific':
 
     for environment in configuration.test_environments:
-        vm_image = vm_images[environment.platform]
-
-        test_job_environment = Environment(
-            platform=vm_image.platform,
-            vm_image=vm_image,
+        test_job_environment = Environment.build(
+            platform=environment.platform,
             interpreter=environment.interpreter,
             version=environment.version,
             architecture=None,
@@ -495,7 +504,7 @@ def create_pipeline(configuration, configuration_path, output_path):
         )
 
     all_job = create_all_job(
-        vm_image=vm_images[ciborg.configuration.linux_platform],
+        environment=tooling_environment,
         other_jobs=jobs,
     )
     jobs = jobs.append(all_job)

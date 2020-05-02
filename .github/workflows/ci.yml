@@ -13,10 +13,10 @@ jobs:
     name: Verify up to date
     runs-on: ubuntu-latest
     steps:
-    - name: Set up CPython 3.7
+    - name: Set up CPython 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: '3.7'
+        python-version: '3.8'
         architecture: x64
     - name: Checkout
       uses: actions/checkout@v2
@@ -35,10 +35,10 @@ jobs:
     name: Build sdist
     runs-on: ubuntu-latest
     steps:
-    - name: Set up CPython 3.7
+    - name: Set up CPython 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: '3.7'
+        python-version: '3.8'
         architecture: x64
     - name: Checkout
       uses: actions/checkout@v2
@@ -57,10 +57,10 @@ jobs:
     name: Build pure wheel
     runs-on: ubuntu-latest
     steps:
-    - name: Set up CPython 3.7
+    - name: Set up CPython 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: '3.7'
+        python-version: '3.8'
         architecture: x64
     - name: Checkout
       uses: actions/checkout@v2
@@ -243,10 +243,10 @@ jobs:
     - tox_macos_cpython_3_8_bdist
     - tox_windows_cpython_3_8_bdist
     steps:
-    - name: Set up CPython 3.7
+    - name: Set up CPython 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: '3.7'
+        python-version: '3.8'
         architecture: x64
     - name: This
       shell: bash

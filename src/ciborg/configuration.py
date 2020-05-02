@@ -8,9 +8,19 @@ import marshmallow.validate
 import ciborg
 
 
-def create_one_of_string(choices):
+# TODO: fancier sentinels give nicer errors or something
+_NOTHING = object()
+
+
+def create_one_of_string(choices, missing=_NOTHING):
+    extras = {}
+
+    if missing is not _NOTHING:
+        extras['missing'] = missing
+
     return marshmallow.fields.String(
         validator=marshmallow.validate.OneOf(choices=choices),
+        **extras,
     )
 
 
@@ -151,10 +161,13 @@ class EnvironmentSchema(marshmallow.Schema):
         python_version.configuration_string
         for python_version in python_versions
     ])
-    install_source = create_one_of_string([
-        install_source.configuration_string
-        for install_source in install_sources
-    ])
+    install_source = create_one_of_string(
+        [
+            install_source.configuration_string
+            for install_source in install_sources
+        ],
+        missing=None,
+    )
 
     @marshmallow.decorators.post_load
     def post_load(self, data, partial, many):
@@ -185,8 +198,11 @@ class Environment:
             self.platform,
             self.interpreter,
             self.version,
-            self.install_source,
         ]
+
+        if self.install_source is not None:
+            elements.append(self.install_source)
+
         return '_'.join(element.identifier_string for element in elements)
 
     def display_name(self):
@@ -194,8 +210,11 @@ class Environment:
             self.platform,
             self.interpreter,
             self.version,
-            self.install_source,
         ]
+
+        if self.install_source is not None:
+            elements.append(self.install_source)
+
         return ' '.join(element.display_string for element in elements)
 
 
@@ -210,6 +229,7 @@ class ConfigurationSchema(marshmallow.Schema):
         'universal',
         'specific',
     ])
+    tooling_environment = marshmallow.fields.Nested(EnvironmentSchema())
     test_environments = marshmallow.fields.List(
         marshmallow.fields.Nested(EnvironmentSchema()),
     )
@@ -225,6 +245,7 @@ class Configuration:
     name = attr.ib()
     build_sdist = attr.ib()
     build_wheel = attr.ib()
+    tooling_environment = attr.ib()
     test_environments = attr.ib()
     ciborg_requirement = attr.ib(
         default='ciborg=={version}'.format(version=ciborg.__version__),

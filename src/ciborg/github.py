@@ -10,11 +10,6 @@ import ciborg.azure
 import ciborg.configuration
 
 
-tooling_python_version = (
-    ciborg.configuration.python_version_by_identifier_string['3.7']
-)
-
-
 def create_tox_test_job(
         build_job,
         environment,
@@ -427,13 +422,13 @@ def create_set_dist_file_path_task(distribution_name, distribution_type):
 
 
 def create_verify_up_to_date_job(
-        vm_image,
+        environment,
         configuration_path,
         output_path,
         ciborg_requirement,
 ):
     setup_python_step = create_setup_python_action_step(
-        python_version=tooling_python_version,
+        python_version=environment.version,
         architecture='x64',
     )
 
@@ -480,15 +475,15 @@ def create_verify_up_to_date_job(
             generation_step,
             verification_step,
         ],
-        runs_on=vm_image,
+        runs_on=environment.vm_image,
     )
 
     return job
 
 
-def create_sdist_job(vm_image):
+def create_sdist_job(environment):
     use_python_version_step = create_setup_python_action_step(
-        python_version=tooling_python_version,
+        python_version=environment.version,
         architecture='x64',
     )
 
@@ -517,15 +512,15 @@ def create_sdist_job(vm_image):
             bash_step,
             publish_task_step,
         ],
-        runs_on=vm_image,
+        runs_on=environment.vm_image,
     )
 
     return sdist_job
 
 
-def create_bdist_wheel_pure_job(vm_image):
+def create_bdist_wheel_pure_job(environment):
     use_python_version_step = create_setup_python_action_step(
-        python_version=tooling_python_version,
+        python_version=environment.version,
         architecture='x64',
     )
 
@@ -554,15 +549,15 @@ def create_bdist_wheel_pure_job(vm_image):
             bash_step,
             publish_task_step,
         ],
-        runs_on=vm_image,
+        runs_on=environment.vm_image,
     )
 
     return job
 
 
-def create_all_job(vm_image, other_jobs):
+def create_all_job(environment, other_jobs):
     use_python_version_step = create_setup_python_action_step(
-        python_version=tooling_python_version,
+        python_version=environment.version,
         architecture='x64',
     )
 
@@ -581,7 +576,7 @@ def create_all_job(vm_image, other_jobs):
             this_step,
         ],
         needs=other_jobs,
-        runs_on=vm_image,
+        runs_on=environment.vm_image,
     )
 
     return job
@@ -590,27 +585,33 @@ def create_all_job(vm_image, other_jobs):
 def create_workflow(configuration, configuration_path, output_path):
     jobs = pvector()
 
+    tooling_environment = ciborg.azure.Environment.build(
+        platform=configuration.tooling_environment.platform,
+        interpreter=configuration.tooling_environment.interpreter,
+        version=configuration.tooling_environment.version,
+        architecture='x64',
+        display_string=configuration.tooling_environment.display_name(),
+        identifier_string=configuration.tooling_environment.identifier(),
+    )
+
     verify_job = create_verify_up_to_date_job(
-        vm_image=ciborg.azure.vm_images[ciborg.configuration.linux_platform],
+        environment=tooling_environment,
         configuration_path=configuration_path,
         output_path=output_path,
         ciborg_requirement=configuration.ciborg_requirement,
     )
+
     jobs = jobs.append(verify_job)
 
     if configuration.build_sdist:
         sdist_job = create_sdist_job(
-            vm_image=ciborg.azure.vm_images[
-                ciborg.configuration.linux_platform
-            ],
+            environment=tooling_environment,
         )
         jobs = jobs.append(sdist_job)
 
     if configuration.build_wheel == 'universal':
         bdist_job = create_bdist_wheel_pure_job(
-            vm_image=ciborg.azure.vm_images[
-                ciborg.configuration.linux_platform
-            ],
+            environment=tooling_environment,
         )
         jobs = jobs.append(bdist_job)
     # elif configuration.build_wheel == 'specific':
@@ -642,10 +643,7 @@ def create_workflow(configuration, configuration_path, output_path):
             ),
         )
 
-    all_job = create_all_job(
-        vm_image=ciborg.azure.vm_images[ciborg.configuration.linux_platform],
-        other_jobs=jobs,
-    )
+    all_job = create_all_job(environment=tooling_environment, other_jobs=jobs)
     jobs = jobs.append(all_job)
 
     pipeline = Workflow(
