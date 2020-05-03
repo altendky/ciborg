@@ -168,6 +168,7 @@ class EnvironmentSchema(marshmallow.Schema):
         ],
         missing=None,
     )
+    tox_environment = marshmallow.fields.String(missing=None, allow_none=True)
 
     @marshmallow.decorators.post_load
     def post_load(self, data, partial, many):
@@ -192,6 +193,7 @@ class Environment:
     interpreter = attr.ib()
     version = attr.ib()
     install_source = attr.ib()
+    tox_environment = attr.ib()
 
     def identifier(self):
         elements = [

@@ -11,6 +11,12 @@
         {
             "platform": "linux",
             "interpreter": "cpython",
+            "version": "3.8",
+            "tox_environment": "typehints"
+        },
+        {
+            "platform": "linux",
+            "interpreter": "cpython",
             "version": "3.7",
             "install_source": "sdist"
         },
