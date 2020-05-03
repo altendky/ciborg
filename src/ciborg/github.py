@@ -1,10 +1,13 @@
 import collections
+import typing
 
 import attr
 import marshmallow
 import marshmallow_polyfield
-from pyrsistent import pvector, pmap, pset
+import pyrsistent.typing
 import yaml
+
+from pyrsistent import pvector, pmap
 
 import ciborg.azure
 import ciborg.configuration
@@ -244,9 +247,9 @@ class RunStep:
     name = attr.ib()
     shell = attr.ib()
     run = attr.ib()
-    environment = attr.ib(
+    environment: typing.Mapping[str, str] = attr.ib(
         default=pmap(),
-        converter=lambda x: collections.OrderedDict(sorted(x.items())),
+        converter=ciborg.azure.sorted_ordered_dict,
     )
 
 
@@ -300,7 +303,9 @@ class Job:
     display_name = attr.ib()
     runs_on = attr.ib()
     needs = attr.ib(factory=pvector)
-    steps = attr.ib(default=(), converter=pvector)
+    steps: pyrsistent.typing.PVector[
+        typing.Union[ActionStep, RunStep],
+    ] = attr.ib(default=pvector(), converter=pvector)
 
 
 # https://github.com/marshmallow-code/marshmallow/issues/483#issuecomment-229557880
@@ -656,14 +661,3 @@ def create_workflow(configuration, configuration_path, output_path):
     )
 
     return pipeline
-
-
-def dump_workflow(pipeline):
-    basic_types = WorkflowSchema().dump(pipeline)
-    dumped = yaml.dump(
-        basic_types,
-        sort_keys=False,
-        Dumper=ciborg.azure.TidyOrderedDictDumper,
-    )
-
-    return dumped

@@ -5,6 +5,7 @@ import attr
 import importlib_resources
 import marshmallow
 import marshmallow_polyfield
+import pyrsistent.typing
 import yaml
 
 from pyrsistent import pvector, pmap, pset
@@ -574,7 +575,9 @@ class IncludeExcludePVectorsSchema(marshmallow.Schema):
         ordered = True
 
     include = marshmallow.fields.List(marshmallow.fields.String())
-    exclude = marshmallow.fields.List(marshmallow.fields.String())
+    exclude_ = marshmallow.fields.List(
+        marshmallow.fields.String(data_key='exclude', attribute='exclude'),
+    )
 
     post_dump = post_dump_remove_skip_values
 
@@ -705,14 +708,20 @@ class BashStepSchema(marshmallow.Schema):
     post_dump = post_dump_remove_skip_values
 
 
+def sorted_ordered_dict(
+        mapping: typing.Mapping[str, str],
+) -> collections.OrderedDict:
+    return collections.OrderedDict(sorted(mapping.items()))
+
+
 @attr.s(frozen=True)
 class BashStep:
     script = attr.ib()
     display_name = attr.ib()
     fail_on_stderr = attr.ib(default=True)
-    environment = attr.ib(
+    environment: typing.Mapping[str, str] = attr.ib(
         default=pmap(),
-        converter=lambda x: collections.OrderedDict(sorted(x.items())),
+        converter=sorted_ordered_dict,
     )
 
 
@@ -774,7 +783,9 @@ class Job:
     depends_on = attr.ib(factory=pvector)
     condition = attr.ib(default=None)
     continue_on_error = attr.ib(default=True)
-    steps = attr.ib(default=(), converter=pvector)
+    steps: pyrsistent.typing.PVector[
+        typing.Union[BashStep, TaskStep],
+    ] = attr.ib(default=pvector(), converter=pvector)
 
 
 class StageSchema(marshmallow.Schema):

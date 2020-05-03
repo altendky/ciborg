@@ -264,8 +264,3 @@ def load(file):
     configuration = ConfigurationSchema().load(marshalled)
 
     return configuration
-
-    pipeline = ciborg.azure.create_pipeline(configuration=configuration)
-    dumped_pipeline = ciborg.azure.dump_pipeline(pipeline=pipeline)
-    with open('azure-pipelines.yml', 'w') as f:
-        f.write(dumped_pipeline)
