@@ -1,10 +1,13 @@
 import collections
+import typing
 
 import attr
 import marshmallow
 import marshmallow_polyfield
-from pyrsistent import pvector, pmap, pset
+import pyrsistent.typing
 import yaml
+
+from pyrsistent import pvector, pmap
 
 import ciborg.azure
 import ciborg.configuration
@@ -16,46 +19,75 @@ def create_tox_test_job(
         distribution_name,
         distribution_type,
 ):
+    steps = pvector()
+
     use_python_version_step = create_setup_python_action_step(
         python_version=environment.version,
         architecture='x64',
     )
+    steps = steps.append(use_python_version_step)
 
     checkout_step = create_checkout_action_step()
+    steps = steps.append(checkout_step)
 
-    download_task_step = create_download_build_artifacts_action_step(
-        download_path='dist',
-        artifact_name='dist',
-    )
+    if distribution_type is not None:
+        download_task_step = create_download_build_artifacts_action_step(
+            download_path='dist',
+            artifact_name='dist',
+        )
+        steps = steps.append(download_task_step)
 
-    select_dist_step = create_set_dist_file_path_task(
-        distribution_name=distribution_name,
-        distribution_type=distribution_type,
-    )
+        select_dist_step = create_set_dist_file_path_task(
+            distribution_name=distribution_name,
+            distribution_type=distribution_type,
+        )
+        steps = steps.append(select_dist_step)
+
+    tox_command = 'python -m tox'
+
+    if distribution_type is not None:
+        tox_command += ''' --installpkg="${{ env['DIST_FILE_PATH'] }}"'''
 
     bash_step = create_bash_step(
         name='Tox',
         commands=[
             'python -m pip install --quiet --upgrade pip setuptools wheel',
             'python -m pip install tox',
-            '''python -m tox --installpkg="${{ env['DIST_FILE_PATH'] }}"''',
+            tox_command,
         ],
         environment={
             'TOXENV': environment.tox_env(),
         },
     )
+    steps = steps.append(bash_step)
+
+    id_pieces = [
+        'tox',
+        *(
+            []
+            if environment.tox_environment is None
+            else [environment.tox_environment]
+        ),
+        environment.identifier_string,
+    ]
+
+    display_pieces = [
+        'Tox',
+        *(
+            []
+            if environment.tox_environment is None
+            else [environment.tox_environment]
+        ),
+    ]
 
     job = Job(
-        id_name='tox_{}'.format(environment.identifier_string),
-        display_name='Tox - {}'.format(environment.display_string),
-        steps=[
-            use_python_version_step,
-            checkout_step,
-            download_task_step,
-            select_dist_step,
-            bash_step,
-        ],
-        needs=[build_job],
+        id_name='_'.join(id_pieces),
+        display_name='{} - {}'.format(
+            ' '.join(display_pieces),
+            environment.display_string,
+        ),
+        steps=steps,
+        needs=[] if build_job is None else [build_job],
         runs_on=environment.vm_image,
     )
 
@@ -244,9 +276,9 @@ class RunStep:
     name = attr.ib()
     shell = attr.ib()
     run = attr.ib()
-    environment = attr.ib(
+    environment: typing.Mapping[str, str] = attr.ib(
         default=pmap(),
-        converter=lambda x: collections.OrderedDict(sorted(x.items())),
+        converter=ciborg.azure.sorted_ordered_dict,
     )
 
 
@@ -300,7 +332,9 @@ class Job:
     display_name = attr.ib()
     runs_on = attr.ib()
     needs = attr.ib(factory=pvector)
-    steps = attr.ib(default=(), converter=pvector)
+    steps: pyrsistent.typing.PVector[
+        typing.Union[ActionStep, RunStep],
+    ] = attr.ib(default=pvector(), converter=pvector)
 
 
 # https://github.com/marshmallow-code/marshmallow/issues/483#issuecomment-229557880
@@ -616,6 +650,11 @@ def create_workflow(configuration, configuration_path, output_path):
         jobs = jobs.append(bdist_job)
     # elif configuration.build_wheel == 'specific':
 
+    build_jobs = {
+        ciborg.configuration.sdist_install_source: sdist_job,
+        ciborg.configuration.bdist_install_source: bdist_job,
+    }
+
     for environment in configuration.test_environments:
         vm_image = ciborg.azure.vm_images[environment.platform]
 
@@ -627,12 +666,10 @@ def create_workflow(configuration, configuration_path, output_path):
             architecture=None,
             display_string=environment.display_name(),
             identifier_string=environment.identifier(),
+            tox_environment=environment.tox_environment,
         )
 
-        build_job = {
-            ciborg.configuration.sdist_install_source: sdist_job,
-            ciborg.configuration.bdist_install_source: bdist_job,
-        }[environment.install_source]
+        build_job = build_jobs.get(environment.install_source)
 
         jobs = jobs.append(
             create_tox_test_job(
@@ -656,14 +693,3 @@ def create_workflow(configuration, configuration_path, output_path):
     )
 
     return pipeline
-
-
-def dump_workflow(pipeline):
-    basic_types = WorkflowSchema().dump(pipeline)
-    dumped = yaml.dump(
-        basic_types,
-        sort_keys=False,
-        Dumper=ciborg.azure.TidyOrderedDictDumper,
-    )
-
-    return dumped

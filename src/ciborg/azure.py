@@ -5,6 +5,7 @@ import attr
 import importlib_resources
 import marshmallow
 import marshmallow_polyfield
+import pyrsistent.typing
 import yaml
 
 from pyrsistent import pvector, pmap, pset
@@ -359,6 +360,7 @@ class Environment:
     architecture = attr.ib()
     display_string = attr.ib()
     identifier_string = attr.ib()
+    tox_environment = attr.ib()
 
     @classmethod
     def build(
@@ -369,6 +371,7 @@ class Environment:
             architecture,
             display_string,
             identifier_string,
+            tox_environment=None,
     ):
         return cls(
             platform=platform,
@@ -378,9 +381,13 @@ class Environment:
             architecture=architecture,
             display_string=display_string,
             identifier_string=identifier_string,
+            tox_environment=tox_environment,
         )
 
     def tox_env(self):
+        if self.tox_environment is not None:
+            return self.tox_environment
+
         env = 'py'
         if self.interpreter == 'PyPy':
             env += 'py'
@@ -404,44 +411,74 @@ def create_tox_test_job(
         distribution_name,
         distribution_type,
 ):
+    steps = pvector()
+
     use_python_version_step = create_use_python_version_task_step(
         version_spec=environment.version,
         architecture='x64',
     )
+    steps = steps.append(use_python_version_step)
 
-    download_task_step = create_download_build_artifacts_task_step(
-        download_path='$(System.DefaultWorkingDirectory)/',
-        artifact_name='dist',
-    )
+    if distribution_type is not None:
+        download_task_step = create_download_build_artifacts_task_step(
+            download_path='$(System.DefaultWorkingDirectory)/',
+            artifact_name='dist',
+        )
+        steps = steps.append(download_task_step)
 
-    select_dist_step = create_set_dist_file_path_task(
-        distribution_name=distribution_name,
-        distribution_type=distribution_type,
-    )
+        select_dist_step = create_set_dist_file_path_task(
+            distribution_name=distribution_name,
+            distribution_type=distribution_type,
+        )
+        steps = steps.append(select_dist_step)
 
-    bash_step = BashStep(
+    tox_command = 'python -m tox'
+    tox_environment = {
+        'TOXENV': environment.tox_env(),
+    }
+
+    if distribution_type is not None:
+        tox_command += ' --installpkg="${DIST_FILE_PATH}"'
+        tox_environment['DIST_FILE_PATH'] = '$(DIST_FILE_PATH)'
+
+    tox_step = BashStep(
         display_name='Tox',
         script='\n'.join([
             'python -m pip install --quiet --upgrade pip setuptools wheel',
             'python -m pip install tox',
-            'python -m tox --installpkg="${DIST_FILE_PATH}"',
+            tox_command,
         ]),
-        environment={
-            'DIST_FILE_PATH': '$(DIST_FILE_PATH)',
-            'TOXENV': environment.tox_env(),
-        },
+        environment=tox_environment,
     )
+    steps = steps.append(tox_step)
+
+    id_pieces = [
+        'tox',
+        *(
+            []
+            if environment.tox_environment is None
+            else [environment.tox_environment]
+        ),
+        environment.identifier_string,
+    ]
+
+    display_pieces = [
+        'Tox',
+        *(
+            []
+            if environment.tox_environment is None
+            else [environment.tox_environment]
+        ),
+    ]
 
     job = Job(
-        id_name='tox_{}'.format(environment.identifier_string),
-        display_name='Tox - {}'.format(environment.display_string),
-        steps=[
-            use_python_version_step,
-            download_task_step,
-            select_dist_step,
-            bash_step,
-        ],
-        depends_on=[build_job],
+        id_name='_'.join(id_pieces),
+        display_name='{} - {}'.format(
+            ' '.join(display_pieces),
+            environment.display_string,
+        ),
+        steps=steps,
+        depends_on=[] if build_job is None else [build_job],
         pool=Pool(vm_image=environment.vm_image),
     )
 
@@ -479,6 +516,11 @@ def create_pipeline(configuration, configuration_path, output_path):
         jobs = jobs.append(bdist_job)
     # elif configuration.build_wheel == 'specific':
 
+    build_jobs = {
+        ciborg.configuration.sdist_install_source: sdist_job,
+        ciborg.configuration.bdist_install_source: bdist_job,
+    }
+
     for environment in configuration.test_environments:
         test_job_environment = Environment.build(
             platform=environment.platform,
@@ -487,12 +529,10 @@ def create_pipeline(configuration, configuration_path, output_path):
             architecture=None,
             display_string=environment.display_name(),
             identifier_string=environment.identifier(),
+            tox_environment=environment.tox_environment,
         )
 
-        build_job = {
-            ciborg.configuration.sdist_install_source: sdist_job,
-            ciborg.configuration.bdist_install_source: bdist_job,
-        }[environment.install_source]
+        build_job = build_jobs.get(environment.install_source)
 
         jobs = jobs.append(
             create_tox_test_job(
@@ -574,7 +614,9 @@ class IncludeExcludePVectorsSchema(marshmallow.Schema):
         ordered = True
 
     include = marshmallow.fields.List(marshmallow.fields.String())
-    exclude = marshmallow.fields.List(marshmallow.fields.String())
+    exclude_ = marshmallow.fields.List(
+        marshmallow.fields.String(data_key='exclude', attribute='exclude'),
+    )
 
     post_dump = post_dump_remove_skip_values
 
@@ -705,14 +747,20 @@ class BashStepSchema(marshmallow.Schema):
     post_dump = post_dump_remove_skip_values
 
 
+def sorted_ordered_dict(
+        mapping: typing.Mapping[str, str],
+) -> collections.OrderedDict:
+    return collections.OrderedDict(sorted(mapping.items()))
+
+
 @attr.s(frozen=True)
 class BashStep:
     script = attr.ib()
     display_name = attr.ib()
     fail_on_stderr = attr.ib(default=True)
-    environment = attr.ib(
+    environment: typing.Mapping[str, str] = attr.ib(
         default=pmap(),
-        converter=lambda x: collections.OrderedDict(sorted(x.items())),
+        converter=sorted_ordered_dict,
     )
 
 
@@ -774,7 +822,9 @@ class Job:
     depends_on = attr.ib(factory=pvector)
     condition = attr.ib(default=None)
     continue_on_error = attr.ib(default=True)
-    steps = attr.ib(default=(), converter=pvector)
+    steps: pyrsistent.typing.PVector[
+        typing.Union[BashStep, TaskStep],
+    ] = attr.ib(default=pvector(), converter=pvector)
 
 
 class StageSchema(marshmallow.Schema):
