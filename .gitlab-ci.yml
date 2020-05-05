@@ -1,6 +1,11 @@
 sdist:
   stage: build
   image: python:3.8
+  only:
+    - /^master$/
+    - /^v.*$/
+    - merge_requests
+    - external_pull_requests
   script:
     - python -m pip install --quiet --upgrade pip
     - python -m pip install --quiet --upgrade pep517
@@ -11,6 +16,11 @@ sdist:
 bdist:
   stage: build
   image: python:3.8
+  only:
+    - /^master$/
+    - /^v.*$/
+    - merge_requests
+    - external_pull_requests
   script:
     - python -m pip install --quiet --upgrade pip
     - python -m pip install --quiet --upgrade pep517
@@ -21,6 +31,11 @@ bdist:
 tox_typehints_linux_cpython_3_8:
   stage: test
   image: python:3.8
+  only:
+    - /^master$/
+    - /^v.*$/
+    - merge_requests
+    - external_pull_requests
   script:
     - python -m pip install --quiet --upgrade pip setuptools wheel
     - python -m pip install tox
@@ -30,6 +45,11 @@ tox_typehints_linux_cpython_3_8:
 tox_linux_cpython_3_6_bdist:
   stage: test
   image: python:3.6
+  only:
+    - /^master$/
+    - /^v.*$/
+    - merge_requests
+    - external_pull_requests
   needs:
     - bdist
   script:
