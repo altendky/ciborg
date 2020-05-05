@@ -1,7 +1,6 @@
-image: python:latest
-
 sdist:
   stage: build
+  image: python:3.8
   script:
     - python -m pip install --quiet --upgrade pip
     - python -m pip install --quiet --upgrade pep517
@@ -11,6 +10,7 @@ sdist:
       - dist/*
 bdist:
   stage: build
+  image: python:3.8
   script:
     - python -m pip install --quiet --upgrade pip
     - python -m pip install --quiet --upgrade pep517
@@ -20,6 +20,7 @@ bdist:
       - dist/*
 tox_typehints_linux_cpython_3_8:
   stage: test
+  image: python:3.8
   script:
     - python -m pip install --quiet --upgrade pip setuptools wheel
     - python -m pip install tox
@@ -28,6 +29,7 @@ tox_typehints_linux_cpython_3_8:
     TOXENV: typehints
 tox_linux_cpython_3_6_bdist:
   stage: test
+  image: python:3.6
   needs:
     - bdist
   script:
