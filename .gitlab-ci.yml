@@ -1,4 +1,7 @@
+image: python:latest
+
 sdist:
+  stage: build
   script:
     - python -m pip install --quiet --upgrade pip
     - python -m pip install --quiet --upgrade pep517
@@ -7,6 +10,7 @@ sdist:
     paths:
       - dist/*
 bdist:
+  stage: build
   script:
     - python -m pip install --quiet --upgrade pip
     - python -m pip install --quiet --upgrade pep517
@@ -15,6 +19,7 @@ bdist:
     paths:
       - dist/*
 tox_typehints_linux_cpython_3_8:
+  stage: test
   script:
     - python -m pip install --quiet --upgrade pip setuptools wheel
     - python -m pip install tox
@@ -22,7 +27,8 @@ tox_typehints_linux_cpython_3_8:
   variables:
     TOXENV: typehints
 tox_linux_cpython_3_6_bdist:
-    needs:
+  stage: test
+  needs:
     - bdist
   script:
     - python -m pip install --quiet --upgrade pip setuptools wheel
