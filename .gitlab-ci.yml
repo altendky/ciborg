@@ -55,4 +55,6 @@ tox_linux_cpython_3_6_bdist:
   script:
     - python -m pip install --quiet --upgrade pip setuptools wheel
     - python -m pip install tox
-    - python -m tox --installpkg="${DIST_FILE_PATH}"
+    - python -m tox
+  variables:
+    TOXENV: py36
