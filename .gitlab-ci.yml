@@ -43,6 +43,19 @@ tox_linux_cpython_3_6_bdist:
   script:
     - python -m pip install --quiet --upgrade pip setuptools wheel
     - python -m pip install tox
-    - python -m tox
+    - export DIST_FILE_PATH=$(ls ${PWD}/dist/*.whl)
+    - python -m tox --installpkg="${DIST_FILE_PATH}"
   variables:
     TOXENV: py36
+tox_linux_cpython_3_8_sdist:
+  stage: test
+  image: python:3.8
+  needs:
+    - sdist
+  script:
+    - python -m pip install --quiet --upgrade pip setuptools wheel
+    - python -m pip install tox
+    - export DIST_FILE_PATH=$(ls ${PWD}/dist/*.tar.gz)
+    - python -m tox --installpkg="${DIST_FILE_PATH}"
+  variables:
+    TOXENV: py38
