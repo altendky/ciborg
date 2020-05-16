@@ -100,8 +100,8 @@ tox_linux_cpython_3_8_bdist:
 tox_windows_cpython_3_8_bdist:
   stage: test
   tags:
-    - docker-windows
-  image: python:3.8
+    - windows
+  image: mcr.microsoft.com/windows/servercore:ltsc2019
   needs:
     - bdist
   script:
