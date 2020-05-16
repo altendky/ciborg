@@ -101,7 +101,7 @@ tox_windows_cpython_3_8_bdist:
   stage: test
   tags:
     - windows
-  image: mcr.microsoft.com/windows/servercore:ltsc2019
+  image: mcr.microsoft.com/windows/servercore:1809-amd64
   needs:
     - bdist
   script:
