@@ -100,8 +100,7 @@ tox_linux_cpython_3_8_bdist:
 tox_windows_cpython_3_8_bdist:
   stage: test
   tags:
-    - windows
-    - docker
+    - docker-windows
   image: python:3.8
   needs:
     - bdist
