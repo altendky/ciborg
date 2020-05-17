@@ -105,7 +105,7 @@ tox_windows_cpython_3_8_bdist:
     - bdist
   script:
     - choco install -y python --version 3.8.3
-    - Update-SessionEnvironment
+    - refreshenv
     - python -m pip install --quiet --upgrade pip setuptools wheel
     - python -m pip install tox
     - export DIST_FILE_PATH=$(ls ${PWD}/dist/*.tar.gz)
