@@ -101,10 +101,10 @@ tox_windows_cpython_3_8_bdist:
   stage: test
   tags:
     - windows
-  image: mcr.microsoft.com/windows/servercore:1809-amd64
   needs:
     - bdist
   script:
+    - choco install python --version 3.8
     - python -m pip install --quiet --upgrade pip setuptools wheel
     - python -m pip install tox
     - export DIST_FILE_PATH=$(ls ${PWD}/dist/*.tar.gz)
