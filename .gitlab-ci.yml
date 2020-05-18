@@ -109,7 +109,8 @@ tox_windows_cpython_3_8_bdist:
     - $env:PATH -split ";"
     - python -m pip install --quiet --upgrade pip setuptools wheel
     - python -m pip install tox
-    - python -m tox --installpkg=dist/*.tar.gz
+    - $env:DIST_FILE_PATH = Get-ChildItem dist/ -Filter *.tar.gz | select fullname
+    - python -m tox --installpkg=$env:DIST_FILE_PATH
   variables:
     TOXENV: py38
 all:
