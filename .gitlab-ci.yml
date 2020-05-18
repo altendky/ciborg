@@ -97,6 +97,21 @@ tox_linux_cpython_3_8_bdist:
 #    - python -m tox --installpkg="${DIST_FILE_PATH}"
 #  variables:
 #    TOXENV: py38
+tox_windows_cpython_3_8_sdist:
+  stage: test
+  tags:
+    - windows
+  needs:
+    - sdist
+  script:
+    - choco install -y python --version 3.8.3
+    - $env:PATH="C:/Python38;${PATH};$env:PATH"
+    - python -m pip install --quiet --upgrade pip setuptools wheel
+    - python -m pip install tox
+    - $env:DIST_FILE_PATH = Get-ChildItem dist/ -Filter *.tar.gz | select fullname
+    - python -m tox --installpkg=$env:DIST_FILE_PATH
+  variables:
+    TOXENV: py38
 tox_windows_cpython_3_8_bdist:
   stage: test
   tags:
@@ -106,10 +121,9 @@ tox_windows_cpython_3_8_bdist:
   script:
     - choco install -y python --version 3.8.3
     - $env:PATH="C:/Python38;${PATH};$env:PATH"
-    - $env:PATH -split ";"
     - python -m pip install --quiet --upgrade pip setuptools wheel
     - python -m pip install tox
-    - $env:DIST_FILE_PATH = Get-ChildItem dist/ -Filter *.tar.gz | select fullname
+    - $env:DIST_FILE_PATH = Get-ChildItem dist/ -Filter *.whl | select fullname
     - python -m tox --installpkg=$env:DIST_FILE_PATH
   variables:
     TOXENV: py38
