@@ -151,17 +151,17 @@ workflows:
       - bdist:
       - tox_typehints_linux_cpython_3_8:
       - tox_linux_cpython_3_6_bdist:
-        requires:
-          - bdist
+          requires:
+            - bdist
       - tox_linux_cpython_3_8_sdist:
-        requires:
-          - sdist
+          requires:
+            - sdist
       - tox_linux_cpython_3_8_bdist:
-        requires:
-          - bdist
+          requires:
+            - bdist
       - tox_macos_cpython_3_8_bdist:
-        requires:
-          - bdist
+          requires:
+            - bdist
       - tox_windows_cpython_3_8_bdist:
-        requires:
-          - bdist
+          requires:
+            - bdist
