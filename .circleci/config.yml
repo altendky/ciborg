@@ -147,8 +147,8 @@ workflows:
   version: 2
   all:
     jobs:
-      - sdist:
-      - bdist:
+      - sdist
+      - bdist
       - tox_typehints_linux_cpython_3_8:
       - tox_linux_cpython_3_6_bdist:
           requires:
