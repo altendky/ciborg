@@ -1,0 +1,167 @@
+version: 2
+
+jobs:
+  sdist:
+    docker:
+      - image: python:3.8
+    steps:
+      - checkout
+      - run:
+          name: Build
+          command: |
+            python -m pip install --quiet --upgrade pip
+            python -m pip install --quiet --upgrade pep517
+            python -m pep517.build --source --out-dir dist/ .
+      - store_artifacts:
+          path: dist/
+      - persist_to_workspace:
+          paths:
+            - dist/
+  bdist:
+    docker:
+      - image: python:3.8
+    steps:
+      - checkout
+      - run:
+          name: Build
+          command: |
+            python -m pip install --quiet --upgrade pip
+            python -m pip install --quiet --upgrade pep517
+            python -m pep517.build --binary --out-dir dist/ .
+      - store_artifacts:
+          path: dist/
+      - persist_to_workspace:
+          paths:
+            - dist/
+  tox_typehints_linux_cpython_3_8:
+    docker:
+      - image: python:3.8
+    environment:
+      TOXENV: typehints
+    steps:
+      - checkout
+      - run:
+          name: Tox
+          command: |
+            python -m pip install --quiet --upgrade pip setuptools wheel
+            python -m pip install tox
+            python -m tox
+      - store_artifacts:
+          path: dist/
+  tox_linux_cpython_3_6_bdist:
+    docker:
+      - image: python:3.6
+    environment:
+      TOXENV: py36
+    steps:
+      - attach_workspace
+      - checkout
+      - run:
+          name: Select distribution file
+          command: |
+            ls ${PWD}/dist/*
+            echo "export DIST_FILE_PATH=$(ls ${PWD}/dist/*.whl)" >> $BASH_ENV
+      - run:
+          name: Tox
+          command: |
+            python -m pip install --quiet --upgrade pip setuptools wheel
+            python -m pip install tox
+            python -m tox --installpkg="${DIST_FILE_PATH}"
+  tox_linux_cpython_3_8_sdist:
+    docker:
+      - image: python:3.8
+    environment:
+      TOXENV: py38
+    steps:
+      - attach_workspace
+      - checkout
+      - run:
+          name: Select distribution file
+          command: |
+            ls ${PWD}/dist/*
+            echo "export DIST_FILE_PATH=$(ls ${PWD}/dist/*.tar.gz)" >> $BASH_ENV
+      - run:
+          name: Tox
+          command: |
+            python -m pip install --quiet --upgrade pip setuptools wheel
+            python -m pip install tox
+            python -m tox --installpkg="${DIST_FILE_PATH}"
+  tox_linux_cpython_3_8_bdist:
+    docker:
+      - image: python:3.8
+    environment:
+      TOXENV: py38
+    steps:
+      - attach_workspace
+      - checkout
+      - run:
+          name: Select distribution file
+          command: |
+            ls ${PWD}/dist/*
+            echo "export DIST_FILE_PATH=$(ls ${PWD}/dist/*.whl)" >> $BASH_ENV
+      - run:
+          name: Tox
+          command: |
+            python -m pip install --quiet --upgrade pip setuptools wheel
+            python -m pip install tox
+            python -m tox --installpkg="${DIST_FILE_PATH}"
+  tox_macos_cpython_3_8_bdist:
+    macos:
+      xcode: "10.0.0"
+    environment:
+      TOXENV: py38
+    steps:
+      - attach_workspace
+      - checkout
+      - run:
+          name: Select distribution file
+          command: |
+            ls ${PWD}/dist/*
+            echo "export DIST_FILE_PATH=$(ls ${PWD}/dist/*.whl)" >> $BASH_ENV
+      - run:
+          name: Tox
+          command: |
+            python -m pip install --quiet --upgrade pip setuptools wheel
+            python -m pip install tox
+            python -m tox --installpkg="${DIST_FILE_PATH}"
+  tox_windows_cpython_3_8_bdist:
+    windows:
+    environment:
+      TOXENV: py38
+    steps:
+      - attach_workspace
+      - checkout
+      - run:
+          name: Select distribution file
+          command: |
+            ls ${PWD}/dist/*
+            echo "export DIST_FILE_PATH=$(ls ${PWD}/dist/*.whl)" >> $BASH_ENV
+      - run:
+          name: Tox
+          command: |
+            python -m pip install --quiet --upgrade pip setuptools wheel
+            python -m pip install tox
+            python -m tox --installpkg="${DIST_FILE_PATH}"
+
+workflows:
+  version: 2
+  all:
+    jobs:
+      - sdist
+      - bdist
+      - tox_typehints_linux_cpython_3_8
+      - tox_linux_cpython_3_6_bdist
+        requires:
+          - bdist
+      - tox_linux_cpython_3_8_sdist
+        requires:
+          - sdist
+      - tox_linux_cpython_3_8_bdist
+        requires:
+          - bdist
+      - tox_macos_cpython_3_8_bdist
+        requires:
+          - bdist
+      - tox_windows_cpython_3_8_bdist
+        requires:
+          - bdist
