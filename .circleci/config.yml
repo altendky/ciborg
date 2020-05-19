@@ -59,7 +59,8 @@ jobs:
     environment:
       TOXENV: py36
     steps:
-      - attach_workspace
+      - attach_workspace:
+          at: .
       - checkout
       - run:
           name: Select distribution file
@@ -78,7 +79,8 @@ jobs:
     environment:
       TOXENV: py38
     steps:
-      - attach_workspace
+      - attach_workspace:
+          at: .
       - checkout
       - run:
           name: Select distribution file
@@ -97,7 +99,8 @@ jobs:
     environment:
       TOXENV: py38
     steps:
-      - attach_workspace
+      - attach_workspace:
+          at: .
       - checkout
       - run:
           name: Select distribution file
@@ -116,7 +119,8 @@ jobs:
     environment:
       TOXENV: py38
     steps:
-      - attach_workspace
+      - attach_workspace:
+          at: .
       - checkout
       - run:
           name: Select distribution file
@@ -136,7 +140,8 @@ jobs:
     environment:
       TOXENV: py38
     steps:
-      - attach_workspace
+      - attach_workspace:
+          at: .
       - checkout
       - run:
           name: Select distribution file
