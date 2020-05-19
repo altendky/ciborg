@@ -132,7 +132,8 @@ jobs:
           name: Install pyenv support libraries
           command: |
             brew update
-            brew install readline xz
+            brew list readline &>/dev/null || brew install readline
+            brew list xz &>/dev/null || brew install xz
       - run:
           name: Install pyenv
           command: |
