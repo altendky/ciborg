@@ -118,7 +118,7 @@ jobs:
       xcode: "10.0.0"
     environment:
       TOXENV: py38
-      PYENV_ROOT: ~/.ciborg/pyenv
+      PYENV_ROOT: ${HOME}/.ciborg/pyenv
     steps:
       - checkout
       - attach_workspace:
