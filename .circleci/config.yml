@@ -118,6 +118,7 @@ jobs:
       xcode: "10.0.0"
     environment:
       TOXENV: py38
+      PYENV_ROOT: ~/.ciborg/pyenv
     steps:
       - checkout
       - attach_workspace:
@@ -127,6 +128,18 @@ jobs:
           command: |
             ls ${PWD}/dist/*
             echo "export DIST_FILE_PATH=$(ls ${PWD}/dist/*.whl)" >> $BASH_ENV
+      - run:
+          name: Install pyenv support libraries
+          command: |
+            brew install readline xz
+      - run:
+          name: Install pyenv
+          command: |
+            curl https://pyenv.run | bash
+      - run:
+          name: pyenv install CPython 3.8
+          command: |
+            CFLAGS="-I$(brew --prefix openssl)/include" LDFLAGS="-L$(brew --prefix openssl)/lib" pyenv install -v 3.8.3
       - run:
           name: Tox
           command: |
