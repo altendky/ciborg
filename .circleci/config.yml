@@ -118,7 +118,6 @@ jobs:
       xcode: "10.0.0"
     environment:
       TOXENV: py38
-      PYENV_ROOT: ${HOME}/.ciborg/pyenv
     steps:
       - checkout
       - attach_workspace:
@@ -137,6 +136,7 @@ jobs:
       - run:
           name: Configure pyenv
           command: |
+            echo 'export PYENV_ROOT=${HOME}/.ciborg/pyenv' >> $BASH_ENV
             echo 'export PATH=${PYENV_ROOT}/bin:${PATH}' >> $BASH_ENV
             echo 'eval $(pyenv init -)' >> $BASH_ENV
             echo "export CFLAGS=-I$(brew --prefix openssl)/include" >> $BASH_ENV
