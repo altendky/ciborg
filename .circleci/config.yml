@@ -1,5 +1,8 @@
 version: 2
 
+orbs:
+  windows: circleci/windows@2.4.0
+
 jobs:
   sdist:
     docker:
@@ -125,7 +128,9 @@ jobs:
             python -m pip install tox
             python -m tox --installpkg="${DIST_FILE_PATH}"
   tox_windows_cpython_3_8_bdist:
-    windows:
+    executor:
+      name: win/default
+      shell: bash
     environment:
       TOXENV: py38
     steps:
