@@ -129,7 +129,7 @@ jobs:
             python -m tox --installpkg="${DIST_FILE_PATH}"
   tox_windows_cpython_3_8_bdist:
     executor:
-      name: win/default
+      name: windows/default
       shell: bash
     environment:
       TOXENV: py38
