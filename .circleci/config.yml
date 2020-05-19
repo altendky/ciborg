@@ -131,15 +131,20 @@ jobs:
       - run:
           name: Install pyenv support libraries
           command: |
+            brew update
             brew install readline xz
       - run:
           name: Install pyenv
           command: |
             curl https://pyenv.run | bash
+            pyenv init >> $BASH_ENV
+            echo "export CFLAGS=-I$(brew --prefix openssl)/include" >> $BASH_ENV
+            echo "export LDFLAGS=-L$(brew --prefix openssl)/lib" >> $BASH_ENV
       - run:
-          name: pyenv install CPython 3.8
+          name: Install CPython 3.8
           command: |
-            CFLAGS="-I$(brew --prefix openssl)/include" LDFLAGS="-L$(brew --prefix openssl)/lib" pyenv install -v 3.8.3
+            pyenv install 3.8.3
+            pyenv global 3.8.3
       - run:
           name: Tox
           command: |
