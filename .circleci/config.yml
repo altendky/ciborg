@@ -141,6 +141,9 @@ jobs:
             echo 'eval $(pyenv init -)' >> $BASH_ENV
             echo "export CFLAGS=-I$(brew --prefix openssl)/include" >> $BASH_ENV
             echo "export LDFLAGS=-L$(brew --prefix openssl)/lib" >> $BASH_ENV
+            echo ------
+            cat $BASH_ENV
+            echo ------
       - run:
           name: Install pyenv
           command: |
