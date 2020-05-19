@@ -149,7 +149,7 @@ workflows:
     jobs:
       - sdist
       - bdist
-      - tox_typehints_linux_cpython_3_8:
+      - tox_typehints_linux_cpython_3_8
       - tox_linux_cpython_3_6_bdist:
           requires:
             - bdist
