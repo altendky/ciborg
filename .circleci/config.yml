@@ -158,8 +158,9 @@ jobs:
             pyenv install --skip-existing 3.8.3
             pyenv global 3.8.3
       - save_cache:
-          path: .ciborg/pyenv
           key: pyenv_macos_cpython_3_8_3
+          paths:
+            - .ciborg/pyenv
       - run:
           name: Tox
           command: |
