@@ -142,7 +142,7 @@ jobs:
           command: |
             curl https://pyenv.run | bash
             echo 'export PATH=${PYENV_ROOT}/bin:${PATH}' >> $BASH_ENV
-            echo 'eval $(pyenv init -)' >> $BASH_ENV
+#            echo 'eval $(pyenv init -)' >> $BASH_ENV
             echo 'export CFLAGS=-I$(brew --prefix openssl)/include' >> $BASH_ENV
             echo 'export LDFLAGS=-L$(brew --prefix openssl)/lib' >> $BASH_ENV
             echo ----
