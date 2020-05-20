@@ -136,7 +136,7 @@ jobs:
       - run:
           name: Configure pyenv
           command: |
-            echo 'export PYENV_ROOT=${HOME}/.ciborg/pyenv' >> $BASH_ENV
+            echo 'export PYENV_ROOT=${PWD}/.ciborg/pyenv' >> $BASH_ENV
       - restore_cache:
           key: pyenv_macos_cpython_3_8_3
       - run:
