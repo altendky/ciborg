@@ -148,6 +148,7 @@ jobs:
           name: Install pyenv
           command: |
             curl https://pyenv.run | bash
+            pyenv --help
       - run:
           name: Install CPython 3.8
           command: |
