@@ -152,12 +152,9 @@ jobs:
       - run:
           name: Install CPython 3.8
           command: |
-            echo hello world
-            echo ${PATH}
             pyenv --help
-            # pyenv install 3.8.3
-            # pyenv global 3.8.3
-            # echo heya
+            pyenv install 3.8.3
+            pyenv global 3.8.3
       - run:
           name: Tox
           command: |
