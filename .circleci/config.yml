@@ -137,6 +137,8 @@ jobs:
           name: Configure pyenv
           command: |
             echo 'export PYENV_ROOT=${HOME}/.ciborg/pyenv' >> $BASH_ENV
+      - restore_cache:
+          key: pyenv_macos_cpython_3_8_3
       - run:
           name: Install pyenv
           command: |
@@ -153,8 +155,11 @@ jobs:
           name: Install CPython 3.8
           command: |
             pyenv --help
-            pyenv install 3.8.3
+            pyenv install --skip-existing 3.8.3
             pyenv global 3.8.3
+      - save_cache:
+          path: .ciborg/pyenv
+          key: pyenv_macos_cpython_3_8_3
       - run:
           name: Tox
           command: |
