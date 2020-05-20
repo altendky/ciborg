@@ -130,7 +130,7 @@ jobs:
       - run:
           name: Install pyenv support libraries
           command: |
-            brew update
+            # brew update
             brew list readline &>/dev/null || brew install readline
             brew list xz &>/dev/null || brew install xz
       - run:
@@ -152,7 +152,7 @@ jobs:
           name: Install CPython 3.8
           command: |
             echo ${PATH}
-            pyenv --help
+            # pyenv --help
             # pyenv install 3.8.3
             # pyenv global 3.8.3
       - run:
