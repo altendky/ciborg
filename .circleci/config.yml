@@ -152,6 +152,7 @@ jobs:
           name: Install CPython 3.8
           command: |
             echo ${PATH}
+            pyenv --help
             pyenv install 3.8.3
             pyenv global 3.8.3
       - run:
