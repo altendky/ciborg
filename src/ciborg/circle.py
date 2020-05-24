@@ -458,12 +458,11 @@ def create_tox_test_job(
             command='\n'.join([
                 'pyenv --help',
                 'set -vx',
-                '''pyenv install --skip-existing $({})'''.format(
+                'export CIBORG_PYTHON_VERSION=$({})'''.format(
                     most_recent_matching_version,
                 ),
-                'pyenv global {version}'.format(
-                    version=dotted_version,
-                ),
+                'pyenv install --skip-existing ${CIBORG_PYTHON_VERSION}',
+                'pyenv global ${CIBORG_PYTHON_VERSION}',
             ]),
         ))
         steps = steps.append(SaveCacheStep(
