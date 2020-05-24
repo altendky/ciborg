@@ -443,6 +443,13 @@ def create_tox_test_job(
             ]),
         ))
         dotted_version = environment.version.joined_by('.')
+        most_recent_matching_version = ' | '.join([
+            'pyenv install --list',
+            "grep '^  {version}'",
+            "grep -v 'dev'",
+            "tail -n 1",
+        ])
+
         steps = steps.append(RunStep(
             name='Install {name} {version}'.format(
                 name=environment.interpreter.display_string,
@@ -450,8 +457,8 @@ def create_tox_test_job(
             ),
             command='\n'.join([
                 'pyenv --help',
-                'pyenv install --skip-existing {version}'.format(
-                    version=dotted_version,
+                '''pyenv install --skip-existing $({})'''.format(
+                    most_recent_matching_version,
                 ),
                 'pyenv global {version}'.format(
                     version=dotted_version,
