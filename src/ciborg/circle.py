@@ -457,6 +457,7 @@ def create_tox_test_job(
             ),
             command='\n'.join([
                 'pyenv --help',
+                'set -vx',
                 '''pyenv install --skip-existing $({})'''.format(
                     most_recent_matching_version,
                 ),

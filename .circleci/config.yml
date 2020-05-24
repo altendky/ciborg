@@ -150,6 +150,7 @@ jobs:
         name: Install CPython 3.8
         command: |-
           pyenv --help
+          set -vx
           pyenv install --skip-existing $(pyenv install --list | grep '^  {version}' | grep -v 'dev' | tail -n 1)
           pyenv global 3.8
     - save_cache:
