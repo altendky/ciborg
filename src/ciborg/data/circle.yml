@@ -9,10 +9,10 @@ jobs:
     - checkout
     - run:
         name: Build
-        command:
-        - python -m pip install --quiet --upgrade pip
-        - python -m pip install --quiet --upgrade pep517
-        - python -m pep517.build --source --out-dir dist/ .
+        command: |-
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet --upgrade pep517
+          python -m pep517.build --source --out-dir dist/ .
     - store_artifacts:
         path: dist
     - persist_to_workspace:
@@ -26,10 +26,10 @@ jobs:
     - checkout
     - run:
         name: Build
-        command:
-        - python -m pip install --quiet --upgrade pip
-        - python -m pip install --quiet --upgrade pep517
-        - python -m pep517.build --binary --out-dir dist/ .
+        command: |-
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet --upgrade pep517
+          python -m pep517.build --binary --out-dir dist/ .
     - store_artifacts:
         path: dist
     - persist_to_workspace:
@@ -45,10 +45,10 @@ jobs:
     - checkout
     - run:
         name: Tox
-        command:
-        - python -m pip install --quiet --upgrade pip setuptools wheel
-        - python -m pip install tox
-        - python -m tox
+        command: |-
+          python -m pip install --quiet --upgrade pip setuptools wheel
+          python -m pip install tox
+          python -m tox
   tox_linux_cpython_3_7_sdist:
     docker:
     - image: python:3.7
@@ -60,15 +60,15 @@ jobs:
         at: .
     - run:
         name: Select distribution file
-        command:
-        - ls ${PWD}/dist/*
-        - echo "export DIST_FILE_PATH=$(ls ${PWD}/dist/*.tar.gz)" >> $BASH_ENV
+        command: |-
+          ls ${PWD}/dist/*
+          echo "export DIST_FILE_PATH=$(ls ${PWD}/dist/*.tar.gz)" >> $BASH_ENV
     - run:
         name: Tox
-        command:
-        - python -m pip install --quiet --upgrade pip setuptools wheel
-        - python -m pip install tox
-        - python -m tox --installpkg="${DIST_FILE_PATH}"
+        command: |-
+          python -m pip install --quiet --upgrade pip setuptools wheel
+          python -m pip install tox
+          python -m tox --installpkg="${DIST_FILE_PATH}"
   tox_linux_cpython_3_6_bdist:
     docker:
     - image: python:3.6
@@ -80,15 +80,15 @@ jobs:
         at: .
     - run:
         name: Select distribution file
-        command:
-        - ls ${PWD}/dist/*
-        - echo "export DIST_FILE_PATH=$(ls ${PWD}/dist/*.whl)" >> $BASH_ENV
+        command: |-
+          ls ${PWD}/dist/*
+          echo "export DIST_FILE_PATH=$(ls ${PWD}/dist/*.whl)" >> $BASH_ENV
     - run:
         name: Tox
-        command:
-        - python -m pip install --quiet --upgrade pip setuptools wheel
-        - python -m pip install tox
-        - python -m tox --installpkg="${DIST_FILE_PATH}"
+        command: |-
+          python -m pip install --quiet --upgrade pip setuptools wheel
+          python -m pip install tox
+          python -m tox --installpkg="${DIST_FILE_PATH}"
 workflows:
   version: 2
   all:

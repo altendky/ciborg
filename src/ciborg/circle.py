@@ -231,11 +231,11 @@ def create_sdist_job(environment):
 
     build_step = RunStep(
         name='Build',
-        command=[
+        command='\n'.join([
             'python -m pip install --quiet --upgrade pip',
             'python -m pip install --quiet --upgrade pep517',
             'python -m pep517.build --source --out-dir dist/ .',
-        ],
+        ]),
     )
 
     store_artifacts_step = StoreArtifactsStep(path=pathlib.Path('dist'))
@@ -267,11 +267,11 @@ def create_bdist_wheel_pure_job(environment):
 
     build_step = RunStep(
         name='Build',
-        command=[
+        command='\n'.join([
             'python -m pip install --quiet --upgrade pip',
             'python -m pip install --quiet --upgrade pep517',
             'python -m pep517.build --binary --out-dir dist/ .',
-        ],
+        ]),
     )
 
     store_artifacts_step = StoreArtifactsStep(path=pathlib.Path('dist'))
@@ -374,10 +374,10 @@ def create_tox_test_job(
 
         steps = steps.append(RunStep(
             name='Select distribution file',
-            command=[
+            command='\n'.join([
                 'ls ${PWD}/dist/*',
                 'echo "export DIST_FILE_PATH=$(ls ${{PWD}}/dist/*{extension})" >> $BASH_ENV'.format(extension=extension),
-            ],
+            ]),
         ))
 
     id_pieces = [
@@ -407,17 +407,17 @@ def create_tox_test_job(
 
         steps = steps.append(RunStep(
             name='Install pyenv support libraries',
-            command=[
+            command='\n'.join([
                 '# brew update',
                 'brew list readline &>/dev/null || brew install readline',
                 'brew list xz &>/dev/null || brew install xz',
-            ],
+            ]),
         ))
         steps = steps.append(RunStep(
             name='Configure pyenv',
-            command=[
+            command='\n'.join([
                 "echo 'export PYENV_ROOT=${PWD}/.ciborg/pyenv' >> $BASH_ENV",
-            ],
+            ]),
         ))
 
         cache_key = 'pyenv_macos_{interpreter}_{version}-v2'.format(
@@ -430,7 +430,7 @@ def create_tox_test_job(
         ))
         steps = steps.append(RunStep(
             name='Install pyenv',
-            command=[
+            command='\n'.join([
                 "if [ ! -e .ciborg/pyenv ]; then curl https://pyenv.run | bash; fi",
                 "echo 'export PATH=${PYENV_ROOT}/bin:${PATH}' >> $BASH_ENV",
                 "echo 'export PATH=${PYENV_ROOT}/shims:${PATH}' >> $BASH_ENV",
@@ -440,7 +440,7 @@ def create_tox_test_job(
                 "echo ----",
                 "cat $BASH_ENV",
                 "echo ----",
-            ],
+            ]),
         ))
         dotted_version = environment.version.joined_by('.')
         steps = steps.append(RunStep(
@@ -448,7 +448,7 @@ def create_tox_test_job(
                 name=environment.interpreter.display_string,
                 version=dotted_version,
             ),
-            command=[
+            command='\n'.join([
                 'pyenv --help',
                 'pyenv install --skip-existing {version}'.format(
                     version=dotted_version,
@@ -456,7 +456,7 @@ def create_tox_test_job(
                 'pyenv global {version}'.format(
                     version=dotted_version,
                 ),
-            ],
+            ]),
         ))
         steps = steps.append(SaveCacheStep(
             key=cache_key,
@@ -472,11 +472,11 @@ def create_tox_test_job(
 
     steps = steps.append(RunStep(
         name='Tox',
-        command=[
+        command='\n'.join([
             'python -m pip install --quiet --upgrade pip setuptools wheel',
             'python -m pip install tox',
             tox_command,
-        ],
+        ]),
     ))
 
     job = Job(
@@ -737,9 +737,7 @@ class RunStepSchema(marshmallow.Schema):
         ordered = True
 
     name = marshmallow.fields.String()
-    command = marshmallow.fields.List(
-        marshmallow.fields.String(),
-    )
+    command = marshmallow.fields.String()
     type = marshmallow.fields.String()
 
     post_dump = post_dump_remove_skip_values
@@ -748,7 +746,7 @@ class RunStepSchema(marshmallow.Schema):
 @attr.dataclass(frozen=True)
 class RunStep:
     name: str
-    command: typing.List[str]
+    command: str
     type: str = 'run'
 
 
