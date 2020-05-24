@@ -445,7 +445,7 @@ def create_tox_test_job(
         dotted_version = environment.version.joined_by('.')
         most_recent_matching_version = ' | '.join([
             'pyenv install --list',
-            "grep '^  {version}'",
+            "grep '^  {version}'".format(version=dotted_version),
             "grep -v 'dev'",
             "tail -n 1",
         ])
