@@ -150,7 +150,7 @@ jobs:
         name: Install CPython 3.8
         command: |-
           pyenv --help
-          pyenv install --skip-existing 3.8
+          pyenv install --skip-existing $(pyenv install --list | grep '^  {version}' | grep -v 'dev' | tail -n 1)
           pyenv global 3.8
     - save_cache:
         key: pyenv_macos_cpython_3_8-v2
