@@ -878,7 +878,7 @@ class JobSchema(marshmallow.Schema):
         keys=marshmallow.fields.String(),
         values=marshmallow.fields.String(),
     )
-    steps = ciborg.utils.ListAsListOfKeyDict(
+    steps = ciborg.utils.ListAsListOfKeyDictOrString(
         nested=marshmallow_polyfield.PolyField(
             serialization_schema_selector=(
                 job_steps_serialization_schema_selector
@@ -925,7 +925,7 @@ class WorkflowSchema(marshmallow.Schema):
     class Meta:
         ordered = True
 
-    jobs = ciborg.utils.ListAsListOfKeyDict(
+    jobs = ciborg.utils.ListAsListOfKeyDictOrString(
         nested=marshmallow.fields.Nested(JobSchema()),
         key='id_name',
         only_these=['requires'],

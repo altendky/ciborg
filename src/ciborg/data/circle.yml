@@ -6,7 +6,7 @@ jobs:
     docker:
     - image: python:3.8
     steps:
-    - checkout: {}
+    - checkout
     - run:
         name: Build
         command:
@@ -23,7 +23,7 @@ jobs:
     docker:
     - image: python:3.8
     steps:
-    - checkout: {}
+    - checkout
     - run:
         name: Build
         command:
@@ -42,7 +42,7 @@ jobs:
     environment:
       TOXENV: typehints
     steps:
-    - checkout: {}
+    - checkout
     - run:
         name: Tox
         command:
@@ -55,7 +55,7 @@ jobs:
     environment:
       TOXENV: py37
     steps:
-    - checkout: {}
+    - checkout
     - attach_workspace:
         at: .
     - run:
@@ -75,7 +75,7 @@ jobs:
     environment:
       TOXENV: py36
     steps:
-    - checkout: {}
+    - checkout
     - attach_workspace:
         at: .
     - run:
@@ -93,9 +93,9 @@ workflows:
   version: 2
   all:
     jobs:
-    - sdist: {}
-    - bdist: {}
-    - tox_typehints_linux_cpython_3_8: {}
+    - sdist
+    - bdist
+    - tox_typehints_linux_cpython_3_8
     - tox_linux_cpython_3_7_sdist:
         requires:
         - sdist

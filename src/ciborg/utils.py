@@ -69,7 +69,7 @@ class NestedListAsKeyValue(marshmallow.fields.Nested):
         }
 
 
-class ListAsListOfKeyDict(marshmallow.fields.List):
+class ListAsListOfKeyDictOrString(marshmallow.fields.List):
     def __init__(
             self,
             nested,
@@ -85,7 +85,7 @@ class ListAsListOfKeyDict(marshmallow.fields.List):
     def _serialize(self, nested_obj, attr, obj):
         serialized = super()._serialize(nested_obj, attr, obj)
 
-        return [
+        result = [
             {
                 entry[self.key]: {
                     key: value
@@ -96,3 +96,14 @@ class ListAsListOfKeyDict(marshmallow.fields.List):
             }
             for entry in serialized
         ]
+
+        result = [
+            (
+                entry
+                if len(next(iter(entry.values()))) > 0
+                else next(iter(entry.keys()))
+            )
+            for entry in result
+        ]
+
+        return result
