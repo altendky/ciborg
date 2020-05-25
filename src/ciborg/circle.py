@@ -15,59 +15,6 @@ import ciborg.data
 import ciborg.utils
 
 
-# class UsePythonVersionTaskStepSchema(marshmallow.Schema):
-#     class Meta:
-#         ordered = True
-#
-#     architecture = marshmallow.fields.String()
-#     version_spec = marshmallow.fields.String(data_key='versionSpec')
-#
-#
-# @attr.s(frozen=True)
-# class UsePythonVersionTaskStepInputs:
-#     architecture = attr.ib()
-#     version_spec = attr.ib()
-#
-#
-# class PublishBuildArtifactsTaskStepSchema(marshmallow.Schema):
-#     class Meta:
-#         ordered = True
-#
-#     path_to_publish = marshmallow.fields.String(data_key='pathToPublish')
-#     artifact_name = marshmallow.fields.String(data_key='artifactName')
-#
-#
-# @attr.s(frozen=True)
-# class PublishBuildArtifactsTaskStep:
-#     path_to_publish = attr.ib()
-#     artifact_name = attr.ib()
-#
-#
-# class DownloadBuildArtifactsTaskStepSchema(marshmallow.Schema):
-#     class Meta:
-#         ordered = True
-#
-#     download_path = marshmallow.fields.String(data_key='downloadPath')
-#     artifact_name = marshmallow.fields.String(data_key='artifactName')
-#
-#
-# @attr.s(frozen=True)
-# class DownloadBuildArtifactsTaskStep:
-#     download_path = attr.ib()
-#     artifact_name = attr.ib()
-#
-#
-# task_step_inputs_type_schema_map = pmap({
-#     UsePythonVersionTaskStepInputs: UsePythonVersionTaskStepSchema,
-#     PublishBuildArtifactsTaskStep: PublishBuildArtifactsTaskStepSchema,
-#     DownloadBuildArtifactsTaskStep: DownloadBuildArtifactsTaskStepSchema,
-# })
-#
-#
-# def task_step_inputs_serialization_schema_selector(base_object, parent_object):
-#     return task_step_inputs_type_schema_map[type(base_object)]()
-
-
 def remove_skip_values(the_dict, skip_values=pset({None, pvector(), pmap()})):
     return type(the_dict)([
         [key, value]
@@ -79,94 +26,6 @@ def remove_skip_values(the_dict, skip_values=pset({None, pvector(), pmap()})):
 @marshmallow.decorators.post_dump
 def post_dump_remove_skip_values(self, data, many):
     return remove_skip_values(data)
-
-
-# class TaskStepSchema(marshmallow.Schema):
-#     class Meta:
-#         ordered = True
-#
-#     task = marshmallow.fields.String()
-#     id_name = marshmallow.fields.String(data_key='name')
-#     display_name = marshmallow.fields.String(data_key='displayName')
-#     inputs = marshmallow_polyfield.PolyField(
-#         serialization_schema_selector=(
-#             task_step_inputs_serialization_schema_selector
-#         ),
-#     )
-#     condition = marshmallow.fields.String(allow_none=True)
-#
-#     post_dump = post_dump_remove_skip_values
-#
-#
-# @attr.s(frozen=True)
-# class TaskStep:
-#     task = attr.ib()
-#     inputs = attr.ib()
-#     id_name = attr.ib(default=None)
-#     display_name = attr.ib(default=None)
-#     condition = attr.ib(default=None)
-#
-#
-# def create_publish_build_artifacts_task_step(path_to_publish, artifact_name):
-#     return TaskStep(
-#         task='PublishBuildArtifacts@1',
-#         display_name='Publish',
-#         id_name='publish',
-#         inputs=PublishBuildArtifactsTaskStep(
-#             path_to_publish=path_to_publish,
-#             artifact_name=artifact_name,
-#         ),
-#     )
-#
-#
-# def create_download_build_artifacts_task_step(download_path, artifact_name):
-#     return TaskStep(
-#         task='DownloadBuildArtifacts@0',
-#         display_name='Download',
-#         id_name='download',
-#         inputs=DownloadBuildArtifactsTaskStep(
-#             download_path=download_path,
-#             artifact_name=artifact_name,
-#         ),
-#     )
-#
-#
-# def create_set_dist_file_path_task(distribution_name, distribution_type):
-#     if distribution_type == ciborg.configuration.sdist_install_source:
-#         # only_or_no_binary = '--no-binary :all:'
-#         extension = '.tar.gz'
-#     elif distribution_type == ciborg.configuration.bdist_install_source:
-#         # only_or_no_binary = '--only-binary :all:'
-#         extension = '.whl'
-#     else:
-#         raise Exception(
-#             'Unexpected distribution type: {!r}'.format(distribution_type),
-#         )
-#
-#     # download_command_format = (
-#     #     'python -m pip download --no-deps {only_or_no_binary}'
-#     #     + ' --find-links dist/ --dest dist-selected/ {package}'
-#     # )
-#     # download_command = download_command_format.format(
-#     #     only_or_no_binary=only_or_no_binary,
-#     #     package=distribution_name,
-#     # )
-#
-#     set_variable_command = (
-#         'echo "##vso[task.setvariable variable=DIST_FILE_PATH]'
-#         # + '$(ls ${PWD}/dist-selected/*)"'
-#         + '$(ls ${{PWD}}/dist/*{})"'.format(extension)
-#     )
-#
-#     return BashStep(
-#         display_name='Select distribution file',
-#         script='\n'.join([
-#             'ls ${PWD}/dist/*',
-#             # download_command,
-#             set_variable_command,
-#         ]),
-#         fail_on_stderr=True,
-#     )
 
 
 def create_verify_up_to_date_job(
@@ -298,62 +157,13 @@ def create_bdist_wheel_pure_job(environment):
     return bdist_job
 
 
-# def create_all_job(environment, other_jobs):
-#     use_python_version_step = create_use_python_version_task_step(
-#         version_spec=environment.version,
-#         architecture='x64',
-#     )
-#
-#     this_step = BashStep(
-#         display_name='This',
-#         script='\n'.join([
-#             'python -m this',
-#         ]),
-#     )
-#
-#     job = Job(
-#         id_name='all',
-#         display_name='All',
-#         steps=[
-#             use_python_version_step,
-#             this_step,
-#         ],
-#         depends_on=other_jobs,
-#         pool=Pool(vm_image=environment.vm_image),
-#     )
-#
-#     return job
-
-
-# class PlatformSchema(marshmallow.Schema):
-#     class Meta:
-#         ordered = True
-#
-#     display_name = marshmallow.fields.String()
-#
-#
-# @attr.s(frozen=True)
-# class Platform:
-#     display_name = attr.ib()
-#
-#     def identifier(self):
-#         return self.display_name.casefold()
-#
-#
-# platforms = {
-#     'linux': Platform(display_name='Linux'),
-#     'macos': Platform(display_name='macOS'),
-#     'windows': Platform(display_name='Windows'),
-# }
-#
-
 def create_tox_test_job(
         build_job,
         environment,
         distribution_name,
         distribution_type,
 ):
-    steps = pvector()
+    steps: pyrsistent.typing.PVector[StepTypesUnion] = pvector()
 
     steps = steps.append(CheckoutStep())
 
@@ -405,14 +215,7 @@ def create_tox_test_job(
     elif environment.platform == ciborg.configuration.macos_platform:
         macos = MacosExecutor(xcode='10.0.0')
 
-        steps = steps.append(RunStep(
-            name='Install pyenv support libraries',
-            command='\n'.join([
-                '# brew update',
-                'brew list readline &>/dev/null || brew install readline',
-                'brew list xz &>/dev/null || brew install xz',
-            ]),
-        ))
+        steps = steps.append(create_brew_prepare_for_pyenv_step())
         steps = steps.append(RunStep(
             name='Configure pyenv',
             command='\n'.join([
@@ -425,46 +228,9 @@ def create_tox_test_job(
             version=environment.version.joined_by('_'),
         )
 
-        steps = steps.append(RestoreCacheStep(
-            key=cache_key,
-        ))
-        steps = steps.append(RunStep(
-            name='Install pyenv',
-            command='\n'.join([
-                "if [ ! -e .ciborg/pyenv ]; then curl https://pyenv.run | bash; fi",
-                "echo 'export PATH=${PYENV_ROOT}/bin:${PATH}' >> $BASH_ENV",
-                "echo 'export PATH=${PYENV_ROOT}/shims:${PATH}' >> $BASH_ENV",
-                '''# echo 'eval '$(pyenv init -)"' >> $BASH_ENV''',
-                "# echo 'export CFLAGS=-I$(brew --prefix openssl)/include' >> $BASH_ENV",
-                "# echo 'export LDFLAGS=-L$(brew --prefix openssl)/lib' >> $BASH_ENV",
-                "echo ----",
-                "cat $BASH_ENV",
-                "echo ----",
-            ]),
-        ))
-        dotted_version = environment.version.joined_by('.')
-        most_recent_matching_version = ' | '.join([
-            'pyenv install --list',
-            "grep '^  {version}'".format(version=dotted_version),
-            "grep -v 'dev'",
-            "tail -n 1",
-        ])
-
-        steps = steps.append(RunStep(
-            name='Install {name} {version}'.format(
-                name=environment.interpreter.display_string,
-                version=dotted_version,
-            ),
-            command='\n'.join([
-                'pyenv --help',
-                'set -vx',
-                'export CIBORG_PYTHON_VERSION=$({})'''.format(
-                    most_recent_matching_version,
-                ),
-                'pyenv install --skip-existing ${CIBORG_PYTHON_VERSION}',
-                'pyenv global ${CIBORG_PYTHON_VERSION}',
-            ]),
-        ))
+        steps = steps.append(RestoreCacheStep(key=cache_key))
+        steps = steps.append(create_install_pyenv_step())
+        steps = steps.append(create_pyenv_install_python_step(environment))
         steps = steps.append(SaveCacheStep(
             key=cache_key,
             paths=[pathlib.Path('.ciborg') / 'pyenv'],
@@ -499,6 +265,61 @@ def create_tox_test_job(
     )
 
     return job
+
+
+def create_brew_prepare_for_pyenv_step():
+    return RunStep(
+        name='Install pyenv support libraries',
+        command='\n'.join([
+            '# brew update',
+            'brew list readline &>/dev/null || brew install readline',
+            'brew list xz &>/dev/null || brew install xz',
+        ]),
+    )
+
+
+def create_install_pyenv_step():
+    create_install_pyenv_step = RunStep(
+        name='Install pyenv',
+        command='\n'.join([
+            "if [ ! -e .ciborg/pyenv ]; then curl https://pyenv.run | bash; fi",
+            "echo 'export PATH=${PYENV_ROOT}/bin:${PATH}' >> $BASH_ENV",
+            "echo 'export PATH=${PYENV_ROOT}/shims:${PATH}' >> $BASH_ENV",
+            '''# echo 'eval '$(pyenv init -)"' >> $BASH_ENV''',
+            "# echo 'export CFLAGS=-I$(brew --prefix openssl)/include' >> $BASH_ENV",
+            "# echo 'export LDFLAGS=-L$(brew --prefix openssl)/lib' >> $BASH_ENV",
+            "echo ----",
+            "cat $BASH_ENV",
+            "echo ----",
+        ]),
+    )
+    return create_install_pyenv_step
+
+
+def create_pyenv_install_python_step(environment):
+    dotted_version = environment.version.joined_by('.')
+    most_recent_matching_version = ' | '.join([
+        'pyenv install --list',
+        "grep '^  {version}'".format(version=dotted_version),
+        "grep -v 'dev'",
+        "tail -n 1",
+    ])
+    pyenv_install_python_step = RunStep(
+        name='Install {name} {version}'.format(
+            name=environment.interpreter.display_string,
+            version=dotted_version,
+        ),
+        command='\n'.join([
+            'pyenv --help',
+            'set -vx',
+            'export CIBORG_PYTHON_VERSION=$({})'''.format(
+                most_recent_matching_version,
+            ),
+            'pyenv install --skip-existing ${CIBORG_PYTHON_VERSION}',
+            'pyenv global ${CIBORG_PYTHON_VERSION}',
+        ]),
+    )
+    return pyenv_install_python_step
 
 
 @attr.s(frozen=True)
@@ -570,12 +391,16 @@ def create_pipeline(configuration, configuration_path, output_path):
     if configuration.build_sdist:
         sdist_job = create_sdist_job(environment=tooling_environment)
         jobs = jobs.append(sdist_job)
+    else:
+        sdist_job = None
 
     if configuration.build_wheel == 'universal':
         bdist_job = create_bdist_wheel_pure_job(
             environment=tooling_environment,
         )
         jobs = jobs.append(bdist_job)
+    else:
+        bdist_job = None
     # elif configuration.build_wheel == 'specific':
 
     build_jobs = {
@@ -797,10 +622,10 @@ class SaveCacheStep:
 
 
 StepTypesUnion = typing.Union[
-    CheckoutStepSchema,
-    AttachWorkspaceStepSchema,
-    StoreArtifactsStepSchema,
-    PersistToWorkspaceStepSchema,
+    CheckoutStep,
+    AttachWorkspaceStep,
+    StoreArtifactsStep,
+    PersistToWorkspaceStep,
     RunStep,
     RestoreCacheStep,
     SaveCacheStep,
@@ -898,15 +723,6 @@ class JobSchema(marshmallow.Schema):
             field_name='id_name',
         ),
     )
-    # condition = marshmallow.fields.String(allow_none=True)
-    # continue_on_error = marshmallow.fields.Boolean(data_key='continueOnError')
-    # steps = marshmallow.fields.List(
-    #     marshmallow_polyfield.PolyField(
-    #         serialization_schema_selector=(
-    #             job_steps_serialization_schema_selector
-    #         ),
-    #     ),
-    # )
 
     post_dump = post_dump_remove_skip_values
 
@@ -916,7 +732,7 @@ class Job:
     id_name: str
 
     # TODO: only want to allow one of these really
-    docker: typing.Optional[typing.List[DockerImageSchema]]
+    docker: typing.Optional[typing.List[DockerImage]]
     macos: typing.Optional[MacosExecutor]
     executor: typing.Optional[RawExecutor]
 
