@@ -560,7 +560,7 @@ class AttachWorkspaceStepSchema(marshmallow.Schema):
 
 @attr.dataclass(frozen=True)
 class AttachWorkspaceStep:
-    at: pathlib.Path = attr.ib(converter=lambda x: pathlib.Path(x))
+    at: pathlib.Path = attr.ib(converter=pathlib.Path)
     type: str = 'attach_workspace'
 
 
@@ -612,12 +612,14 @@ class SaveCacheStepSchema(marshmallow.Schema):
     post_dump = post_dump_remove_skip_values
 
 
+def to_pvector_of_paths(x) -> pyrsistent.typing.PVector[pathlib.Path]:
+    return pvector(pathlib.Path(v) for v in x)
+
+
 @attr.dataclass(frozen=True)
 class SaveCacheStep:
     key: str
-    paths: typing.List[pathlib.Path] = attr.ib(
-        converter=lambda x: pvector(pathlib.Path(v) for v in x),
-    )
+    paths: typing.List[pathlib.Path] = attr.ib(converter=to_pvector_of_paths)
     type: str = 'save_cache'
 
 
