@@ -391,7 +391,7 @@ def create_install_pyenv_win_step():
     step = RunStep(
         name='Install pyenv',
         command='\n'.join([
-            "if [ ! -e ${PYENV_ROOT} ]; then git clone https://github.com/pyenv-win/pyenv-win.git ${PYENV_ROOT}'; fi",
+            "if [ ! -e ${PYENV_ROOT} ]; then git clone https://github.com/pyenv-win/pyenv-win.git ${PYENV_ROOT}; fi",
             "echo 'export PATH=${PYENV_ROOT}/bin:${PATH}' >> $BASH_ENV",
             "echo 'export PATH=${PYENV_ROOT}/shims:${PATH}' >> $BASH_ENV",
             "echo ----",
