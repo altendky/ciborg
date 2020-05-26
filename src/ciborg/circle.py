@@ -221,6 +221,8 @@ def create_tox_test_job(
             name='Configure pyenv',
             command='\n'.join([
                 "echo 'export PYENV_ROOT=${PWD}/.ciborg/pyenv' >> $BASH_ENV",
+                "echo 'export PATH=${PYENV_ROOT}/bin:${PATH}' >> $BASH_ENV",
+                "echo 'export PATH=${PYENV_ROOT}/shims:${PATH}' >> $BASH_ENV",
             ]),
         ))
 
