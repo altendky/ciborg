@@ -162,6 +162,7 @@ def create_tox_test_job(
         environment,
         distribution_name,
         distribution_type,
+        pyenv_job,
 ):
     steps: pyrsistent.typing.PVector[StepTypesUnion] = pvector()
 
@@ -215,6 +216,90 @@ def create_tox_test_job(
     elif environment.platform == ciborg.configuration.macos_platform:
         macos = MacosExecutor(xcode='10.0.0')
 
+        # steps = steps.append(create_brew_prepare_for_pyenv_step())
+        steps = steps.append(RunStep(
+            name='Configure pyenv',
+            command='\n'.join([
+                "echo 'export PYENV_ROOT=${PWD}/.ciborg/pyenv' >> $BASH_ENV",
+            ]),
+        ))
+
+        cache_key = 'pyenv_macos_{interpreter}_{version}-v2'.format(
+            interpreter=environment.interpreter.identifier_string,
+            version=environment.version.joined_by('_'),
+        )
+
+        steps = steps.append(RestoreCacheStep(key=cache_key))
+        # steps = steps.append(create_install_pyenv_step())
+        # steps = steps.append(create_pyenv_install_python_step(environment))
+        # steps = steps.append(SaveCacheStep(
+        #     key=cache_key,
+        #     paths=[pathlib.Path('.ciborg') / 'pyenv'],
+        # ))
+    elif environment.platform == ciborg.configuration.windows_platform:
+        executor = RawExecutor(name='windows/default', shell='bash')
+
+    tox_command = 'python -m tox'
+
+    if distribution_type is not None:
+        tox_command += ''' --installpkg="${DIST_FILE_PATH}"'''
+
+    steps = steps.append(RunStep(
+        name='Tox',
+        command='\n'.join([
+            'python -m pip install --quiet --upgrade pip setuptools wheel',
+            'python -m pip install tox',
+            tox_command,
+        ]),
+    ))
+
+    requires = pvector()
+    if pyenv_job is not None:
+        requires = requires.append(pyenv_job)
+    if build_job is not None:
+        requires = requires.append(build_job)
+
+    if len(requires) == 0:
+        requires = None
+
+    job = Job(
+        id_name='_'.join(id_pieces),
+        docker=docker,
+        macos=macos,
+        executor=executor,
+        environment={
+            'TOXENV': environment.tox_env(),
+        },
+        steps=steps,
+        requires=requires,
+    )
+
+    return job
+
+
+def create_pyenv_install_job(environment):
+    steps: pyrsistent.typing.PVector[StepTypesUnion] = pvector()
+
+    id_pieces = [
+        'pyenv',
+        environment.identifier(),
+    ]
+
+    docker = None
+    macos = None
+    executor = None
+
+    if environment.platform == ciborg.configuration.linux_platform:
+        docker = [
+            DockerImage(
+                image='python:{version}'.format(
+                    version=environment.version.joined_by('.'),
+                ),
+            ),
+        ]
+    elif environment.platform == ciborg.configuration.macos_platform:
+        macos = MacosExecutor(xcode='10.0.0')
+
         steps = steps.append(create_brew_prepare_for_pyenv_step())
         steps = steps.append(RunStep(
             name='Configure pyenv',
@@ -238,30 +323,12 @@ def create_tox_test_job(
     elif environment.platform == ciborg.configuration.windows_platform:
         executor = RawExecutor(name='windows/default', shell='bash')
 
-    tox_command = 'python -m tox'
-
-    if distribution_type is not None:
-        tox_command += ''' --installpkg="${DIST_FILE_PATH}"'''
-
-    steps = steps.append(RunStep(
-        name='Tox',
-        command='\n'.join([
-            'python -m pip install --quiet --upgrade pip setuptools wheel',
-            'python -m pip install tox',
-            tox_command,
-        ]),
-    ))
-
     job = Job(
         id_name='_'.join(id_pieces),
         docker=docker,
         macos=macos,
         executor=executor,
-        environment={
-            'TOXENV': environment.tox_env(),
-        },
         steps=steps,
-        requires=pvector([build_job] if build_job is not None else []),
     )
 
     return job
@@ -368,6 +435,10 @@ class Environment:
         return env
 
 
+def pyenv_environment_from_configuration_environment(environment):
+    return attr.evolve(environment, install_source=None, tox_environment=None)
+
+
 def create_pipeline(configuration, configuration_path, output_path):
     jobs = pvector()
 
@@ -408,6 +479,19 @@ def create_pipeline(configuration, configuration_path, output_path):
         ciborg.configuration.bdist_install_source: bdist_job,
     }
 
+    pyenv_environments = {
+        pyenv_environment_from_configuration_environment(environment)
+        for environment in configuration.test_environments
+    }
+
+    pyenv_jobs = {
+        environment: create_pyenv_install_job(environment)
+        for environment in pyenv_environments
+        if environment.platform != ciborg.configuration.linux_platform
+    }
+
+    jobs = jobs.extend(sorted(pyenv_jobs.values()))
+
     for environment in configuration.test_environments:
         test_job_environment = Environment.build(
             platform=environment.platform,
@@ -427,6 +511,11 @@ def create_pipeline(configuration, configuration_path, output_path):
                 environment=test_job_environment,
                 distribution_name=configuration.name,
                 distribution_type=environment.install_source,
+                pyenv_job=pyenv_jobs.get(
+                    pyenv_environment_from_configuration_environment(
+                        environment,
+                    )
+                ),
             ),
         )
 
@@ -738,8 +827,9 @@ class Job:
     macos: typing.Optional[MacosExecutor]
     executor: typing.Optional[RawExecutor]
 
-    environment: typing.Mapping[str, str]
     steps: typing.Sequence[StepTypesUnion]
+
+    environment: typing.Mapping[str, str] = attr.ib(factory=pmap)
 
     requires: pyrsistent.typing.PVector['Job'] = attr.ib(factory=pvector)
 
