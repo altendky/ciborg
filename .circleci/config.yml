@@ -81,8 +81,31 @@ jobs:
       shell: bash
     steps:
     - run:
-        name: Filler
-        command: echo be full
+        name: Configure pyenv
+        command: echo 'export PYENV_ROOT=${PWD}/.ciborg/pyenv' >> $BASH_ENV
+    - restore_cache:
+        key: pyenv_windows_cpython_3_8-v2
+    - run:
+        name: Install pyenv
+        command: |-
+          if [ ! -e ${PYENV_ROOT} ]; then git clone https://github.com/pyenv-win/pyenv-win.git ${PYENV_ROOT}'; fi
+          echo 'export PATH=${PYENV_ROOT}/bin:${PATH}' >> $BASH_ENV
+          echo 'export PATH=${PYENV_ROOT}/shims:${PATH}' >> $BASH_ENV
+          echo ----
+          cat $BASH_ENV
+          echo ----
+    - run:
+        name: Install CPython 3.8
+        command: |-
+          pyenv --help
+          set -vx
+          export CIBORG_PYTHON_VERSION=$(pyenv install --list | grep '^  3.8' | grep -v 'dev' | tail -n 1)
+          pyenv install --skip-existing ${CIBORG_PYTHON_VERSION}
+          pyenv global ${CIBORG_PYTHON_VERSION}
+    - save_cache:
+        key: pyenv_windows_cpython_3_8-v2
+        paths:
+        - .ciborg/pyenv
   tox_typehints_linux_cpython_3_8:
     docker:
     - image: python:3.8

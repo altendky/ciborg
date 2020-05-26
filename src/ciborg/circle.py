@@ -310,7 +310,8 @@ def create_pyenv_install_job(environment):
             ]),
         ))
 
-        cache_key = 'pyenv_macos_{interpreter}_{version}-v2'.format(
+        cache_key = 'pyenv_{platform}_{interpreter}_{version}-v2'.format(
+            platform=environment.platform.identifier_string,
             interpreter=environment.interpreter.identifier_string,
             version=environment.version.joined_by('_'),
         )
@@ -326,10 +327,24 @@ def create_pyenv_install_job(environment):
         executor = RawExecutor(name='windows/default', shell='bash')
 
         steps = steps.append(RunStep(
-            name='Filler',
+            name='Configure pyenv',
             command='\n'.join([
-                "echo be full",
+                "echo 'export PYENV_ROOT=${PWD}/.ciborg/pyenv' >> $BASH_ENV",
             ]),
+        ))
+
+        cache_key = 'pyenv_{platform}_{interpreter}_{version}-v2'.format(
+            platform=environment.platform.identifier_string,
+            interpreter=environment.interpreter.identifier_string,
+            version=environment.version.joined_by('_'),
+        )
+
+        steps = steps.append(RestoreCacheStep(key=cache_key))
+        steps = steps.append(create_install_pyenv_win_step())
+        steps = steps.append(create_pyenv_install_python_step(environment))
+        steps = steps.append(SaveCacheStep(
+            key=cache_key,
+            paths=[pathlib.Path('.ciborg') / 'pyenv'],
         ))
 
     job = Job(
@@ -370,6 +385,21 @@ def create_install_pyenv_step():
         ]),
     )
     return create_install_pyenv_step
+
+
+def create_install_pyenv_win_step():
+    step = RunStep(
+        name='Install pyenv',
+        command='\n'.join([
+            "if [ ! -e ${PYENV_ROOT} ]; then git clone https://github.com/pyenv-win/pyenv-win.git ${PYENV_ROOT}'; fi",
+            "echo 'export PATH=${PYENV_ROOT}/bin:${PATH}' >> $BASH_ENV",
+            "echo 'export PATH=${PYENV_ROOT}/shims:${PATH}' >> $BASH_ENV",
+            "echo ----",
+            "cat $BASH_ENV",
+            "echo ----",
+        ]),
+    )
+    return step
 
 
 def create_pyenv_install_python_step(environment):
