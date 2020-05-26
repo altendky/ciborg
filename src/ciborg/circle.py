@@ -405,7 +405,6 @@ def create_install_pyenv_win_step():
 def create_pyenv_install_python_step(environment):
     dotted_version = environment.version.joined_by('.')
     most_recent_matching_version = ' | '.join([
-        'echo $PATH',
         'pyenv install --list',
         "grep '^  {version}'".format(version=dotted_version),
         "grep -v 'dev'",
@@ -417,6 +416,10 @@ def create_pyenv_install_python_step(environment):
             version=dotted_version,
         ),
         command='\n'.join([
+            'echo $PATH',
+            "ls ${PYENV_ROOT}",
+            "ls ${PYENV_ROOT}/bin",
+            "ls ${PYENV_ROOT}/shims",
             'pyenv --help',
             'set -vx',
             'export CIBORG_PYTHON_VERSION=$({})'''.format(
