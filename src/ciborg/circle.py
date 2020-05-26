@@ -323,6 +323,13 @@ def create_pyenv_install_job(environment):
     elif environment.platform == ciborg.configuration.windows_platform:
         executor = RawExecutor(name='windows/default', shell='bash')
 
+        steps = steps.append(RunStep(
+            name='Filler',
+            command='\n'.join([
+                "echo be full",
+            ]),
+        ))
+
     job = Job(
         id_name='_'.join(id_pieces),
         docker=docker,
