@@ -226,7 +226,7 @@ def create_tox_test_job(
             ]),
         ))
 
-        cache_key = 'pyenv_macos_{interpreter}_{version}-v2'.format(
+        cache_key = 'pyenv_macos_{interpreter}_{version}-v3'.format(
             interpreter=environment.interpreter.identifier_string,
             version=environment.version.joined_by('_'),
         )
@@ -310,7 +310,7 @@ def create_pyenv_install_job(environment):
             ]),
         ))
 
-        cache_key = 'pyenv_{platform}_{interpreter}_{version}-v2'.format(
+        cache_key = 'pyenv_{platform}_{interpreter}_{version}-v3'.format(
             platform=environment.platform.identifier_string,
             interpreter=environment.interpreter.identifier_string,
             version=environment.version.joined_by('_'),
@@ -333,7 +333,7 @@ def create_pyenv_install_job(environment):
             ]),
         ))
 
-        cache_key = 'pyenv_{platform}_{interpreter}_{version}-v2'.format(
+        cache_key = 'pyenv_{platform}_{interpreter}_{version}-v3'.format(
             platform=environment.platform.identifier_string,
             interpreter=environment.interpreter.identifier_string,
             version=environment.version.joined_by('_'),
