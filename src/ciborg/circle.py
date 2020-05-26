@@ -405,6 +405,7 @@ def create_install_pyenv_win_step():
 def create_pyenv_install_python_step(environment):
     dotted_version = environment.version.joined_by('.')
     most_recent_matching_version = ' | '.join([
+        'echo $PATH',
         'pyenv install --list',
         "grep '^  {version}'".format(version=dotted_version),
         "grep -v 'dev'",
