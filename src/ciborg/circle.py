@@ -239,13 +239,6 @@ def create_tox_test_job(
     elif environment.platform == ciborg.configuration.windows_platform:
         executor = RawExecutor(name='windows/default', shell='bash')
 
-        steps = steps.append(RunStep(
-            name='Filler',
-            command='\n'.join([
-                "echo filled",
-            ]),
-        ))
-
     tox_command = 'python -m tox'
 
     if distribution_type is not None:
