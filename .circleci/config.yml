@@ -73,7 +73,7 @@ jobs:
           pyenv --help
           pyenv install --list
           set -vx
-          export CIBORG_PYTHON_VERSION=$(pyenv install --list | sed -n 's/^\s\+\(3.8[^\s]*\)/\1/p' | grep -v 'dev' | tail -n 1)
+          export CIBORG_PYTHON_VERSION=$(pyenv install --list | sed -n 's/^ *\(3.8[^ ]*\)/\1/p' | grep -v 'dev' | tail -n 1)
           echo ${CIBORG_PYTHON_VERSION}
           pyenv install --skip-existing ${CIBORG_PYTHON_VERSION}
           pyenv global ${CIBORG_PYTHON_VERSION}
@@ -110,7 +110,7 @@ jobs:
           pyenv --help
           pyenv install --list
           set -vx
-          export CIBORG_PYTHON_VERSION=$(pyenv install --list | sed -n 's/^\s\+\(3.8[^\s]*\)/\1/p' | grep -v 'dev' | tail -n 1)
+          export CIBORG_PYTHON_VERSION=$(pyenv install --list | sed -n 's/^ *\(3.8[^ ]*\)/\1/p' | grep -v 'dev' | tail -n 1)
           echo ${CIBORG_PYTHON_VERSION}
           pyenv install --skip-existing ${CIBORG_PYTHON_VERSION}
           pyenv global ${CIBORG_PYTHON_VERSION}

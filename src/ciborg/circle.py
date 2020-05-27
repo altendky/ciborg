@@ -406,7 +406,7 @@ def create_pyenv_install_python_step(environment):
     dotted_version = environment.version.joined_by('.')
     most_recent_matching_version = ' | '.join([
         'pyenv install --list',
-        r"sed -n 's/^\s\+\({version}[^\s]*\)/\1/p'".format(version=dotted_version),
+        r"sed -n 's/^ *\({version}[^ ]*\)/\1/p'".format(version=dotted_version),
         "grep -v 'dev'",
         "tail -n 1",
     ])
