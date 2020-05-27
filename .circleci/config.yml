@@ -67,12 +67,13 @@ jobs:
         name: Install CPython 3.8
         command: |-
           echo $PATH
-          ls ${PYENV_ROOT}
-          ls ${PYENV_ROOT}/bin
-          ls ${PYENV_ROOT}/shims
+          ls ${PYENV_ROOT} || true
+          ls ${PYENV_ROOT}/bin || true
+          ls ${PYENV_ROOT}/shims || true
           pyenv --help
           set -vx
           export CIBORG_PYTHON_VERSION=$(pyenv install --list | sed -n 's/^\s\+\(3.8[^\s]*\)/\1/p' | grep -v 'dev' | tail -n 1)
+          echo ${CIBORG_PYTHON_VERSION}
           pyenv install --skip-existing ${CIBORG_PYTHON_VERSION}
           pyenv global ${CIBORG_PYTHON_VERSION}
     - save_cache:
@@ -88,7 +89,7 @@ jobs:
         name: Configure pyenv
         command: echo 'export PYENV_ROOT=${PWD}/.ciborg/pyenv' >> $BASH_ENV
     - restore_cache:
-        key: pyenv_windows_cpython_3_8-v4
+        key: pyenv_windows_cpython_3_8-v5
     - run:
         name: Install pyenv
         command: |-
@@ -102,16 +103,17 @@ jobs:
         name: Install CPython 3.8
         command: |-
           echo $PATH
-          ls ${PYENV_ROOT}
-          ls ${PYENV_ROOT}/bin
-          ls ${PYENV_ROOT}/shims
+          ls ${PYENV_ROOT} || true
+          ls ${PYENV_ROOT}/bin || true
+          ls ${PYENV_ROOT}/shims || true
           pyenv --help
           set -vx
           export CIBORG_PYTHON_VERSION=$(pyenv install --list | sed -n 's/^\s\+\(3.8[^\s]*\)/\1/p' | grep -v 'dev' | tail -n 1)
+          echo ${CIBORG_PYTHON_VERSION}
           pyenv install --skip-existing ${CIBORG_PYTHON_VERSION}
           pyenv global ${CIBORG_PYTHON_VERSION}
     - save_cache:
-        key: pyenv_windows_cpython_3_8-v4
+        key: pyenv_windows_cpython_3_8-v5
         paths:
         - .ciborg/pyenv
   tox_typehints_linux_cpython_3_8:

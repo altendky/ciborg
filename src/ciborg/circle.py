@@ -333,7 +333,7 @@ def create_pyenv_install_job(environment):
             ]),
         ))
 
-        cache_key = 'pyenv_{platform}_{interpreter}_{version}-v4'.format(
+        cache_key = 'pyenv_{platform}_{interpreter}_{version}-v5'.format(
             platform=environment.platform.identifier_string,
             interpreter=environment.interpreter.identifier_string,
             version=environment.version.joined_by('_'),
@@ -417,14 +417,15 @@ def create_pyenv_install_python_step(environment):
         ),
         command='\n'.join([
             'echo $PATH',
-            "ls ${PYENV_ROOT}",
-            "ls ${PYENV_ROOT}/bin",
-            "ls ${PYENV_ROOT}/shims",
+            "ls ${PYENV_ROOT} || true",
+            "ls ${PYENV_ROOT}/bin || true",
+            "ls ${PYENV_ROOT}/shims || true",
             'pyenv --help',
             'set -vx',
             'export CIBORG_PYTHON_VERSION=$({})'''.format(
                 most_recent_matching_version,
             ),
+            'echo ${CIBORG_PYTHON_VERSION}',
             'pyenv install --skip-existing ${CIBORG_PYTHON_VERSION}',
             'pyenv global ${CIBORG_PYTHON_VERSION}',
         ]),
