@@ -333,7 +333,7 @@ def create_pyenv_install_job(environment):
             ]),
         ))
 
-        cache_key = 'pyenv_{platform}_{interpreter}_{version}-v3'.format(
+        cache_key = 'pyenv_{platform}_{interpreter}_{version}-v4'.format(
             platform=environment.platform.identifier_string,
             interpreter=environment.interpreter.identifier_string,
             version=environment.version.joined_by('_'),
@@ -406,7 +406,7 @@ def create_pyenv_install_python_step(environment):
     dotted_version = environment.version.joined_by('.')
     most_recent_matching_version = ' | '.join([
         'pyenv install --list',
-        "grep '^  {version}'".format(version=dotted_version),
+        r"sed -n 's/^\s\+\({version}[^\s]*\)/\1/p'".format(version=dotted_version),
         "grep -v 'dev'",
         "tail -n 1",
     ])
