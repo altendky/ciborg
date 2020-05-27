@@ -421,6 +421,7 @@ def create_pyenv_install_python_step(environment):
             "ls ${PYENV_ROOT}/bin || true",
             "ls ${PYENV_ROOT}/shims || true",
             'pyenv --help',
+            'pyenv install --list',
             'set -vx',
             'export CIBORG_PYTHON_VERSION=$({})'''.format(
                 most_recent_matching_version,
