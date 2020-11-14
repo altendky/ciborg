@@ -1,14 +1,21 @@
 ciborg
 ======
 
-|PyPI| |Pythons| |Azure| |codecov| |GitHub|
-
 Assimilate your CI services
 
-First targeted service:
+|PyPI| |Pythons| |Azure| |codecov| |GitHub|
 
-- `Azure Pipelines`_
-- `GitHub Actions`_
+ciborg aims to provide two layers of control allowing you to write CI configuration that
+is agnostic to the actual CI provider you use.  The first layer provides a CLI to
+convert the ciborg configuration to CI provider specific configuration files.  This
+layer is opinionated about proper CI practices and should be easily usable by all
+developers to setup a quality CI pipeline.  The second layer provides a Python API
+allowing more advanced users to build their own top level implementation using the basic
+building blocks provided by ciborg.
+
+Note:
+    This project is in the early stages of development.  It has bootstrapped itself on
+    `Azure Pipelines`_ and `GitHub Actions`_.
 
 .. _Azure Pipelines: https://azure.microsoft.com/en-us/services/devops/pipelines/
 .. _GitHub Actions: https://github.com/features/actions
