@@ -1,0 +1,143 @@
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^master$/
+    - if: $CI_COMMIT_TAG =~ /^v/
+    - if: $CI_EXTERNAL_PULL_REQUEST_IID != null
+    - if: $CI_MERGE_REQUEST_ID != null
+    - if: $CI != null # always
+      when: never
+sdist:
+  stage: build
+  tags:
+    - linux
+  image: python:3.8
+  script:
+    - python -m pip install --quiet --upgrade pip
+    - python -m pip install --quiet --upgrade pep517
+    - python -m pep517.build --source --out-dir dist/ .
+  artifacts:
+    paths:
+      - dist/*
+bdist:
+  stage: build
+  tags:
+    - linux
+  image: python:3.8
+  script:
+    - python -m pip install --quiet --upgrade pip
+    - python -m pip install --quiet --upgrade pep517
+    - python -m pep517.build --binary --out-dir dist/ .
+  artifacts:
+    paths:
+      - dist/*
+tox_typehints_linux_cpython_3_8:
+  stage: test
+  tags:
+    - linux
+  image: python:3.8
+  script:
+    - python -m pip install --quiet --upgrade pip setuptools wheel
+    - python -m pip install tox
+    - python -m tox
+  variables:
+    TOXENV: typehints
+tox_linux_cpython_3_6_bdist:
+  stage: test
+  tags:
+    - linux
+  image: python:3.6
+  needs:
+    - bdist
+  script:
+    - python -m pip install --quiet --upgrade pip setuptools wheel
+    - python -m pip install tox
+    - export DIST_FILE_PATH=$(ls ${PWD}/dist/*.whl)
+    - python -m tox --installpkg="${DIST_FILE_PATH}"
+  variables:
+    TOXENV: py36
+tox_linux_cpython_3_8_sdist:
+  stage: test
+  tags:
+    - linux
+  image: python:3.8
+  needs:
+    - sdist
+  script:
+    - python -m pip install --quiet --upgrade pip setuptools wheel
+    - python -m pip install tox
+    - export DIST_FILE_PATH=$(ls ${PWD}/dist/*.tar.gz)
+    - python -m tox --installpkg="${DIST_FILE_PATH}"
+  variables:
+    TOXENV: py38
+tox_linux_cpython_3_8_bdist:
+  stage: test
+  tags:
+    - linux
+  image: python:3.8
+  needs:
+    - bdist
+  script:
+    - python -m pip install --quiet --upgrade pip setuptools wheel
+    - python -m pip install tox
+    - export DIST_FILE_PATH=$(ls ${PWD}/dist/*.tar.gz)
+    - python -m tox --installpkg="${DIST_FILE_PATH}"
+  variables:
+    TOXENV: py38
+#tox_macos_cpython_3_8_bdist:
+#  stage: test
+#  tags:
+#    - osx
+#  image: python:3.8
+#  needs:
+#    - bdist
+#  script:
+#    - python -m pip install --quiet --upgrade pip setuptools wheel
+#    - python -m pip install tox
+#    - export DIST_FILE_PATH=$(ls ${PWD}/dist/*.tar.gz)
+#    - python -m tox --installpkg="${DIST_FILE_PATH}"
+#  variables:
+#    TOXENV: py38
+tox_windows_cpython_3_8_sdist:
+  stage: test
+  tags:
+    - windows
+  needs:
+    - sdist
+  script:
+    - choco install -y python --version 3.8.3
+    - $env:PATH="C:/Python38;${PATH};$env:PATH"
+    - python -m pip install --quiet --upgrade pip setuptools wheel
+    - python -m pip install tox
+    - $env:DIST_FILE_PATH = Get-ChildItem dist/ -Filter *.tar.gz | % { $_.FullName }
+    - python -m tox --installpkg=$env:DIST_FILE_PATH
+  variables:
+    TOXENV: py38
+tox_windows_cpython_3_8_bdist:
+  stage: test
+  tags:
+    - windows
+  needs:
+    - bdist
+  script:
+    - choco install -y python --version 3.8.3
+    - $env:PATH="C:/Python38;${PATH};$env:PATH"
+    - python -m pip install --quiet --upgrade pip setuptools wheel
+    - python -m pip install tox
+    - $env:DIST_FILE_PATH = Get-ChildItem dist/ -Filter *.whl | % { $_.FullName }
+    - python -m tox --installpkg=$env:DIST_FILE_PATH
+  variables:
+    TOXENV: py38
+all:
+  stage: test
+  tags:
+    - linux
+  image: python:3.8
+  needs:
+    - bdist
+  script:
+    - python -m pip install --quiet --upgrade pip setuptools wheel
+    - python -m pip install tox
+    - export DIST_FILE_PATH=$(ls ${PWD}/dist/*.tar.gz)
+    - python -m tox --installpkg="${DIST_FILE_PATH}"
+  variables:
+    TOXENV: py38
