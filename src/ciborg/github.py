@@ -11,6 +11,7 @@ from pyrsistent import pvector, pmap
 
 import ciborg.azure
 import ciborg.configuration
+import ciborg.utils
 
 
 def create_tox_test_job(
@@ -337,33 +338,13 @@ class Job:
     ] = attr.ib(default=pvector(), converter=pvector)
 
 
-# https://github.com/marshmallow-code/marshmallow/issues/483#issuecomment-229557880
-class NestedDict(marshmallow.fields.Nested):
-    def __init__(self, nested, key, remove_key=False, *args, **kwargs):
-        super(NestedDict, self).__init__(nested, many=True, *args, **kwargs)
-        self.key = key
-        self.remove_key = remove_key
-
-    def _serialize(self, nested_obj, attr, obj):
-        nested_list = super(NestedDict, self)._serialize(nested_obj, attr, obj)
-        nested_dict = {item[self.key]: item for item in nested_list}
-        for value in nested_dict.values():
-            value.pop(self.key)
-        return nested_dict
-
-    def _deserialize(self, value, attr, data):
-        raw_list = [item for key, item in value.items()]
-        nested_list = super(NestedDict, self)._deserialize(raw_list, attr, data)
-        return nested_list
-
-
 class WorkflowSchema(marshmallow.Schema):
     class Meta:
         ordered = True
 
     name = marshmallow.fields.String()
     on = marshmallow.fields.Nested(OnSchema())
-    jobs = NestedDict(
+    jobs = ciborg.utils.NestedDict(
         nested=JobSchema(),
         key='id_name',
         remove_key=True,

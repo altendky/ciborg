@@ -647,11 +647,6 @@ class Trigger:
     paths = attr.ib(factory=IncludeExcludePVectors)
 
 
-class OrderedDictField(marshmallow.fields.Mapping):
-    # https://github.com/marshmallow-code/marshmallow/pull/1098
-    mapping_type = collections.OrderedDict
-
-
 class UsePythonVersionTaskStepSchema(marshmallow.Schema):
     class Meta:
         ordered = True

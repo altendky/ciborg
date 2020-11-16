@@ -187,7 +187,7 @@ class EnvironmentSchema(marshmallow.Schema):
         return Environment(**data)
 
 
-@attr.s
+@attr.s(frozen=True)
 class Environment:
     platform = attr.ib()
     interpreter = attr.ib()
