@@ -5,21 +5,22 @@
 #    python boots.py lock
 #
 -e git+https://github.com/altendky/marshmallow@0009a064339d6f4db753833c8c9d25e1c903e712#egg=marshmallow
-attrs==19.2.0
-certifi==2019.9.11        # via requests
-chardet==3.0.4            # via requests
-click==7.0
-idna==2.8                 # via requests
-importlib-resources==1.0.2
-marshmallow-polyfield==5.7
+attrs==20.3.0
+certifi==2020.12.5        # via requests
+chardet==4.0.0            # via requests
+click==7.1.2
+idna==2.10                # via requests
+importlib-resources==5.1.2
+marshmallow-polyfield==5.10
 pip-tools==4.2.0
-pyrsistent==0.15.4
-pyyaml==5.1.2
-requests==2.22.0          # via romp
-romp==2019.4.1
-six==1.12.0               # via marshmallow-polyfield, pip-tools, pyrsistent
-urllib3==1.25.6           # via requests
+pyrsistent==0.17.3
+pyyaml==5.4.1
+requests==2.25.1          # via romp
+romp==2020.12
+six==1.15.0               # via pip-tools
+urllib3==1.26.4           # via requests
 wheel==0.33.6
+zipp==3.4.1               # via importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip==19.2.3
