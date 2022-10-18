@@ -22,7 +22,7 @@ mypy==0.730
 packaging==19.2           # via pytest, tox
 pip-tools==4.2.0
 pluggy==0.13.0            # via pytest, tox
-py==1.8.0                 # via pytest, tox
+py==1.10.0                 # via pytest, tox
 pyparsing==2.4.2          # via packaging
 pyrsistent==0.15.4
 pytest-cov==2.8.1
