@@ -7,7 +7,7 @@
 -e git+https://github.com/altendky/marshmallow@0009a064339d6f4db753833c8c9d25e1c903e712#egg=marshmallow
 atomicwrites==1.3.0       # via pytest
 attrs==19.2.0
-certifi==2019.9.11        # via requests
+certifi==2022.12.7        # via requests
 chardet==3.0.4            # via requests
 click==7.0
 colorama==0.4.1           # via pytest
