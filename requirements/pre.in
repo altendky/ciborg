@@ -1,5 +1,5 @@
 pip==19.2.3
 pip-tools==4.2.0
 romp==2019.4.1
-setuptools==41.4.0
+setuptools==65.5.1
 wheel==0.33.6
